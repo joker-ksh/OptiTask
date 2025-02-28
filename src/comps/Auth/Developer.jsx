@@ -29,13 +29,11 @@ const Developer = () => {
   };
 
   return (
-    <div className="w-screen h-screen bg-gradient-to-br from-black to-gray-800 flex items-center justify-center px-4">
-      <div className="w-full max-w-5xl bg-gray-900 p-8 rounded-xl shadow-lg flex flex-col md:flex-row gap-8">
+    <div className="w-screen min-h-screen bg-gradient-to-br from-black to-gray-800 flex items-center justify-center px-4 py-6">
+      <div className="w-full max-w-5xl bg-gray-900 p-6 md:p-8 rounded-xl shadow-lg flex flex-col md:flex-row gap-6">
         {/* Left Side: Form Section */}
         <div className="w-full md:w-1/2">
-          <h2 className="text-3xl font-bold text-white mb-6 text-center">
-            Developer Signup
-          </h2>
+          <h2 className="text-2xl md:text-3xl font-bold text-white mb-6 text-center">Developer Signup</h2>
           <form onSubmit={handleSubmit}>
             {/* Name */}
             <div className="mb-4">
@@ -104,12 +102,24 @@ const Developer = () => {
         {/* Right Side: Resume Preview */}
         <div className="w-full md:w-1/2 flex items-center justify-center">
           {resumePreview ? (
-            <iframe
-              src={resumePreview}
-              className="w-full h-96 border border-gray-700 rounded-md shadow-md"
-            ></iframe>
+            <div className="w-full">
+              <iframe
+                src={resumePreview}
+                className="hidden md:block w-full h-96 border border-gray-700 rounded-md shadow-md"
+              ></iframe>
+              {/* Show download link for mobile */}
+              <a
+                href={resumePreview}
+                download="resume.pdf"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="md:hidden block text-indigo-400 text-center mt-4 underline"
+              >
+                Open Resume
+              </a>
+            </div>
           ) : (
-            <p className="text-gray-400 text-center">
+            <p className="text-gray-400 text-center text-sm md:text-base">
               Resume preview will appear here after upload.
             </p>
           )}
