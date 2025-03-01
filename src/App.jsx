@@ -11,12 +11,12 @@ function App() {
 
   return (
     <>
-      {/* <Landing /> */}
-      {/* <Manager /> */}
-      {/* <Developer /> */}
-      {/* <Developerdash /> */}
-      {/* <Managerdash /> */}
-      {/* <Task /> */}
+      <Landing />
+      <Manager />
+      <Developer />
+      <Developerdash />
+      <Managerdash />
+      <Task />
     </>
   )
 }
