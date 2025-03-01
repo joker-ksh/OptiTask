@@ -1,7 +1,50 @@
 import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const Landing = () => {
-  const [userType, setUserType] = useState("manager"); // Default to manager
+  const [userType, setUserType] = useState("manager");
+  const [formData, setFormData] = useState({ email: "", password: "" });
+  const [errorMessage, setErrorMessage] = useState(""); // 🔴 State for error messages
+  const navigate = useNavigate();
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setErrorMessage(""); // Reset error message before attempting login
+    console.log(`Logging in as ${userType}...`);
+    console.log("User Credentials:", formData);
+
+    try {
+      let res;
+
+      if (userType === "manager") {
+        res = await axios.post("http://localhost:5000/manager/signin", formData, {
+          headers: { "Content-Type": "application/json" },
+        });
+
+        console.log(res);
+        navigate(`/managerdash?email=${formData.email}`);
+      } 
+      // Developer login logic
+      else {
+        res = await axios.post("http://localhost:5000/developer/signin", formData, {
+          headers: { "Content-Type": "application/json" },
+        });
+
+        console.log(res);
+        navigate(`/developerdash?email=${formData.email}`);
+      }
+
+      console.log(`${userType} logged in successfully`);
+    } catch (error) {
+      console.error("Login error:", error.response?.data?.message || error.message);
+      setErrorMessage(error.response?.data?.message || "Something went wrong. Please try again."); // 🔴 Set error message from server
+    }
+  };
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
   return (
     <div className="w-screen h-screen bg-gradient-to-br from-black to-gray-800 flex flex-col">
@@ -11,9 +54,7 @@ const Landing = () => {
           <button
             onClick={() => setUserType("manager")}
             className={`px-6 py-2 font-semibold rounded-md transition duration-200 ${
-              userType === "manager"
-                ? "bg-indigo-600 text-white"
-                : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+              userType === "manager" ? "bg-indigo-600 text-white" : "bg-gray-700 text-gray-300 hover:bg-gray-600"
             }`}
           >
             Manager
@@ -21,9 +62,7 @@ const Landing = () => {
           <button
             onClick={() => setUserType("developer")}
             className={`px-6 py-2 font-semibold rounded-md transition duration-200 ${
-              userType === "developer"
-                ? "bg-green-600 text-white"
-                : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+              userType === "developer" ? "bg-green-600 text-white" : "bg-gray-700 text-gray-300 hover:bg-gray-600"
             }`}
           >
             Developer
@@ -37,23 +76,35 @@ const Landing = () => {
           <h2 className="text-3xl font-bold text-center text-white mb-6">
             {userType === "manager" ? "Manager Login" : "Developer Login"}
           </h2>
-          <form>
+          <form onSubmit={handleLogin}>
             <div className="mb-4">
               <label className="block text-gray-300 mb-2">Email</label>
               <input
                 type="email"
+                name="email"
                 placeholder="Enter your email"
+                value={formData.email}
+                onChange={handleChange}
                 className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                required
               />
             </div>
-            <div className="mb-6">
+            <div className="mb-4">
               <label className="block text-gray-300 mb-2">Password</label>
               <input
                 type="password"
+                name="password"
                 placeholder="Enter your password"
+                value={formData.password}
+                onChange={handleChange}
                 className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                required
               />
             </div>
+            
+            {/* 🔴 Error message displayed here */}
+            {errorMessage && <p className="text-red-500 text-sm mb-4">{errorMessage}</p>}
+
             <button
               type="submit"
               className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-md transition duration-200"
@@ -63,12 +114,9 @@ const Landing = () => {
           </form>
           <p className="text-gray-400 text-center mt-4">
             Don't have an account?{" "}
-            <a
-              href={userType === "manager" ? "/manager-signup" : "/developer-signup"}
-              className="text-indigo-400 hover:underline"
-            >
+            <Link to={userType === "manager" ? "/managerSignUp" : "/DeveloperSignUp"} className="text-indigo-400 hover:underline">
               Sign Up
-            </a>
+            </Link>
           </p>
         </div>
       </div>

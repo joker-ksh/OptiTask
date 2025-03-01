@@ -1,20 +1,38 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
-const ManagerSignup = () => {
+const ManagerSignUp = () => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
   });
+  const [errorMessage, setErrorMessage] = useState(""); // 🔴 State for error messages
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setErrorMessage(""); // Reset error message before attempting signup
     console.log("Signup Data:", formData);
-    // Add Firebase signup logic here
+
+    try {
+      const res = await axios.post("http://localhost:5000/manager/signup", formData, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      console.log(res);
+      navigate(`/managerdash?email=${formData.email}`);
+    } catch (error) {
+      console.error("Signup error:", error.response?.data?.message || error.message);
+      setErrorMessage(error.response?.data?.message || "Something went wrong. Please try again."); // 🔴 Set error message
+    }
   };
 
   return (
@@ -48,7 +66,7 @@ const ManagerSignup = () => {
               required
             />
           </div>
-          <div className="mb-6">
+          <div className="mb-4">
             <label className="block text-gray-300 mb-2">Password</label>
             <input
               type="password"
@@ -60,6 +78,10 @@ const ManagerSignup = () => {
               required
             />
           </div>
+
+          {/* 🔴 Error message displayed here */}
+          {errorMessage && <p className="text-red-500 text-sm mb-4">{errorMessage}</p>}
+
           <button
             type="submit"
             className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-md transition duration-200"
@@ -72,4 +94,4 @@ const ManagerSignup = () => {
   );
 };
 
-export default ManagerSignup;
+export default ManagerSignUp;

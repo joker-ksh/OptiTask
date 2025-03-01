@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 
-const Developer = () => {
+const DeveloperSignUp = () => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -129,4 +129,4 @@ const Developer = () => {
   );
 };
 
-export default Developer;
+export default DeveloperSignUp;
