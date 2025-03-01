@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
 const DeveloperSignUp = () => {
   const [formData, setFormData] = useState({
     name: "",
@@ -9,23 +10,84 @@ const DeveloperSignUp = () => {
   });
 
   const [resumePreview, setResumePreview] = useState(null);
-
+  const [uploading, setUploading] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState("");
+  const [uploadStatusColor, setUploadStatusColor] = useState("text-blue-400"); // Default color (blue)
+  const navigate = useNavigate();
+  // Handle Input Change
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleResumeUpload = (e) => {
+  // Handle Resume Upload
+  const handleResumeUpload = async (e) => {
     const file = e.target.files[0];
     if (file) {
+      console.log("File selected:", file.name);
       setFormData({ ...formData, resume: file });
       setResumePreview(URL.createObjectURL(file));
+      setUploadStatus("Uploading...");
+      setUploadStatusColor("text-blue-400"); // Set to blue while uploading
+      await uploadToCloudinary(file);
     }
   };
 
+  // Upload Resume to Cloudinary
+  const uploadToCloudinary = async (file) => {
+    const cloudName = import.meta.env.VITE_APP_CLOUDINARY_CLOUD_NAME;
+    const uploadPreset = import.meta.env.VITE_APP_CLOUDINARY_UPLOAD_PRESET;
+
+    console.log("Cloudinary Cloud Name:", cloudName);
+    console.log("Cloudinary Upload Preset:", uploadPreset);
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", uploadPreset);
+
+    try {
+      setUploading(true);
+      setUploadStatus("Uploading...");
+      setUploadStatusColor("text-blue-400"); // Set to blue while uploading
+
+      const res = await axios.post(
+        `https://api.cloudinary.com/v1_1/${cloudName}/upload`,
+        formData
+      );
+      console.log("Cloudinary Upload Response:", res.data);
+
+      setFormData((prev) => {
+        const updatedFormData = { ...prev, resume: res.data.secure_url };
+        console.log("Updated Form Data:", updatedFormData);
+        return updatedFormData;
+      });
+
+      setUploadStatus("Upload successful!");
+      setUploadStatusColor("text-green-400"); // Green on success
+    } catch (error) {
+      console.error("Cloudinary Upload Error:", error);
+      setUploadStatus("Upload failed. Try again.");
+      setUploadStatusColor("text-red-400"); // Red on failure
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // Handle Form Submission
   const handleSubmit = (e) => {
     e.preventDefault();
     console.log("Signup Data:", formData);
-    // Add Firebase signup logic here
+
+    // Send form data to backend
+    axios
+      .post("http://localhost:5000/developer/signup", formData)
+      .then((res) => {
+        console.log("Signup Response:", res.data);
+        navigate(`/developerdash?${formData.email}`);
+      })
+      .catch((error) => {
+        console.error("Signup Error:", error);
+        alert("Signup failed. Try again.");
+      });   
   };
 
   return (
@@ -33,9 +95,10 @@ const DeveloperSignUp = () => {
       <div className="w-full max-w-5xl bg-gray-900 p-6 md:p-8 rounded-xl shadow-lg flex flex-col md:flex-row gap-6">
         {/* Left Side: Form Section */}
         <div className="w-full md:w-1/2">
-          <h2 className="text-2xl md:text-3xl font-bold text-white mb-6 text-center">Developer Signup</h2>
+          <h2 className="text-2xl md:text-3xl font-bold text-white mb-6 text-center">
+            Developer Signup
+          </h2>
           <form onSubmit={handleSubmit}>
-            {/* Name */}
             <div className="mb-4">
               <label className="block text-gray-300 mb-2">Full Name</label>
               <input
@@ -48,8 +111,6 @@ const DeveloperSignUp = () => {
                 required
               />
             </div>
-
-            {/* Email */}
             <div className="mb-4">
               <label className="block text-gray-300 mb-2">Email</label>
               <input
@@ -62,8 +123,6 @@ const DeveloperSignUp = () => {
                 required
               />
             </div>
-
-            {/* Password */}
             <div className="mb-4">
               <label className="block text-gray-300 mb-2">Password</label>
               <input
@@ -76,8 +135,6 @@ const DeveloperSignUp = () => {
                 required
               />
             </div>
-
-            {/* Resume Upload */}
             <div className="mb-6">
               <label className="block text-gray-300 mb-2">Upload Resume (PDF)</label>
               <input
@@ -88,8 +145,7 @@ const DeveloperSignUp = () => {
                 required
               />
             </div>
-
-            {/* Submit Button */}
+            {uploadStatus && <p className={`text-center ${uploadStatusColor}`}>{uploadStatus}</p>}
             <button
               type="submit"
               className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-md transition duration-200"
@@ -98,8 +154,6 @@ const DeveloperSignUp = () => {
             </button>
           </form>
         </div>
-
-        {/* Right Side: Resume Preview */}
         <div className="w-full md:w-1/2 flex items-center justify-center">
           {resumePreview ? (
             <div className="w-full">
@@ -107,7 +161,6 @@ const DeveloperSignUp = () => {
                 src={resumePreview}
                 className="hidden md:block w-full h-96 border border-gray-700 rounded-md shadow-md"
               ></iframe>
-              {/* Show download link for mobile */}
               <a
                 href={resumePreview}
                 download="resume.pdf"

@@ -2,6 +2,7 @@ const express = require('express');
 const app = express();
 const cors = require('cors');
 const managerRoutes = require('./routes/managerRoutes');
+const developerRoutes = require('./routes/developerRoutes');
 const dotenv = require('dotenv');
 dotenv.config();
 
@@ -18,6 +19,8 @@ app.use(cors(corsOptions));
 
 //routes
 app.use('/manager',managerRoutes);
+app.use('/developer',developerRoutes);
+
 
 // Default Route
 app.get("/", (req, res) => {
