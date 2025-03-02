@@ -11,6 +11,7 @@
   "type": "commonjs",
   "description": "",
   "dependencies": {
+    "@google/generative-ai": "^0.22.0",
     "axios": "^1.8.1",
     "body-parser": "^1.20.3",
     "cloudinary": "^2.5.1",
