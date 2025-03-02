@@ -60,10 +60,17 @@ const DeveloperSignUp = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (uploading) {
+      alert("Please wait for the resume upload to finish.");
+      return;
+    }
+
     setLoading(true); // Start loading
 
     try {
       const res = await axios.post("http://localhost:5000/developer/signup", formData);
+      const data = await res.data;
+      localStorage.setItem("authTokenDeveloper", data.token);
       navigate(`/developerdash?${formData.email}`);
     } catch (error) {
       alert("Signup failed. Try again.");
@@ -80,12 +87,12 @@ const DeveloperSignUp = () => {
             Developer Signup
           </h2>
           <form onSubmit={handleSubmit}>
-            <input type="text" name="name" placeholder="Full Name" value={formData.name} onChange={handleChange} required className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-md text-white mb-4" />
-            <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleChange} required className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-md text-white mb-4" />
-            <input type="password" name="password" placeholder="Password" value={formData.password} onChange={handleChange} required className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-md text-white mb-4" />
-            <input type="file" accept="application/pdf" onChange={handleResumeUpload} required className="w-full bg-gray-800 text-gray-300 px-4 py-2 border border-gray-700 rounded-md mb-4" />
+            <input type="text" name="name" placeholder="Full Name" value={formData.name} onChange={handleChange} required disabled={loading} className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-md text-white mb-4 disabled:opacity-50" />
+            <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleChange} required disabled={loading} className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-md text-white mb-4 disabled:opacity-50" />
+            <input type="password" name="password" placeholder="Password" value={formData.password} onChange={handleChange} required disabled={loading} className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-md text-white mb-4 disabled:opacity-50" />
+            <input type="file" accept="application/pdf" onChange={handleResumeUpload} required disabled={loading || uploading} className="w-full bg-gray-800 text-gray-300 px-4 py-2 border border-gray-700 rounded-md mb-4 disabled:opacity-50" />
             {uploadStatus && <p className={`text-center ${uploadStatusColor}`}>{uploadStatus}</p>}
-            <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-md transition duration-200 flex justify-center items-center" disabled={loading}>
+            <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-md transition duration-200 flex justify-center items-center disabled:opacity-50" disabled={loading || uploading}>
               {loading ? <span className="animate-spin h-5 w-5 border-4 border-white border-t-transparent rounded-full"></span> : "Sign Up"}
             </button>
           </form>

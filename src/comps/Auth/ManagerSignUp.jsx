@@ -27,6 +27,10 @@ const ManagerSignUp = () => {
         },
       });
 
+      const data = await res.data;
+      localStorage.setItem("authTokenDeveloper", data.token);
+      localStorage.setItem("uid", data.user.uid);
+      console.log("Signup Response:", res.data);
       console.log(res);
       navigate(`/managerdash?email=${formData.email}`);
     } catch (error) {

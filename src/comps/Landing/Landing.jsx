@@ -21,7 +21,10 @@ const Landing = () => {
         res = await axios.post("http://localhost:5000/manager/signin", formData, {
           headers: { "Content-Type": "application/json" },
         });
-
+        
+        const data = res.data; 
+        localStorage.setItem("authTokenManager", data.token);
+        localStorage.setItem("uid", data.user.uid);
         console.log(res);
         navigate(`/managerdash?email=${formData.email}`);
       } 
@@ -30,7 +33,9 @@ const Landing = () => {
         res = await axios.post("http://localhost:5000/developer/signin", formData, {
           headers: { "Content-Type": "application/json" },
         });
-
+        const data = res.data; 
+        localStorage.setItem("authTokenDeveloper", data.token);
+        localStorage.setItem("uid", data.user.uid);
         console.log(res);
         navigate(`/developerdash?email=${formData.email}`);
       }

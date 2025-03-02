@@ -18,31 +18,19 @@ const ManagerSignUp = async (req, res) => {
   }
 
   try {
-    const userCredentials = await createUserWithEmailAndPassword(
-      auth,
-      email,
-      password
-    );
+    const userCredentials = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredentials.user;
 
     // Store manager details in Firestore
-    await setDoc(doc(db, "managers", user.uid), {
-      name: name,
-      email: email,
-    });
+    await setDoc(doc(db, "managers", user.uid), { name, email });
 
-    // Generate token
     const token = await user.getIdToken();
 
     console.log(user.email + " signed up");
     res.status(200).json({
       message: "Manager Signed Up Successfully",
-      token, // Send token in response
-      user: {
-        uid: user.uid,
-        name,
-        email,
-      },
+      token, 
+      user: { uid: user.uid, name, email },
     });
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -56,24 +44,16 @@ const ManagerSignIn = async (req, res) => {
   }
 
   try {
-    const userCredentials = await signInWithEmailAndPassword(
-      auth,
-      email,
-      password
-    );
+    const userCredentials = await signInWithEmailAndPassword(auth, email, password);
     const user = userCredentials.user;
 
-    // Generate token
     const token = await user.getIdToken();
 
     console.log(user.email + " signed in");
     res.status(200).json({
       message: "Manager Signed In Successfully",
-      token, // Send token in response
-      user: {
-        uid: user.uid,
-        email,
-      },
+      token, 
+      user: { uid: user.uid, email },
     });
   } catch (error) {
     res.status(400).json({ message: error.message });

@@ -1,5 +1,5 @@
 const { auth, db } = require('../config/firebase');
-const { createUserWithEmailAndPassword, signInWithEmailAndPassword, getIdToken } = require('firebase/auth');
+const { createUserWithEmailAndPassword, signInWithEmailAndPassword } = require('firebase/auth');
 const { setDoc, doc } = require("firebase/firestore");
 const pdfparse = require('pdf-parse');
 const axios = require('axios');
@@ -33,7 +33,7 @@ const DeveloperSignUp = async (req, res) => {
 
         // Step 4: Send Resume Text to Gemini API for Skill Extraction
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
 
         const prompt = `
         You are an AI resume analyzer. Analyze the following resume text and extract technical skills.
@@ -46,8 +46,11 @@ const DeveloperSignUp = async (req, res) => {
         """${extractedText}"""
         `;
 
-        const geminiResponse = await model.generateContent(prompt);
-        const skillsExtracted = geminiResponse.response.text();
+        const geminiResponse = await model.generateContent({
+            contents: [{ role: "user", parts: [{ text: prompt }] }]
+        });
+
+        const skillsExtracted = geminiResponse.response.candidates[0].content.parts[0].text;
         console.log("Extracted Skills:", skillsExtracted);
 
         // Step 5: Store Developer Data in Firestore
@@ -55,19 +58,20 @@ const DeveloperSignUp = async (req, res) => {
             name: name,
             email: email,
             resume: resume,
-            skills: skillsExtracted
+            skills: skillsExtracted,
+            available: true
         });
         console.log('Developer added to Firestore');
 
-        // Step 6: Generate Token
-        const token = await user.getIdToken(); // Firebase-generated token
-
+        // Step 6: Generate Token Correctly
+        const token = await user.getIdToken();
         res.status(200).json({
             message: "Developer Signed Up Successfully",
             token: token, // Return token in response
             skills: skillsExtracted
         });
     } catch (error) {
+        console.error("Signup Error:", error);
         res.status(400).json({ message: error.message });
     }
 };
@@ -82,14 +86,15 @@ const DeveloperSignIn = async (req, res) => {
         const user = userCredentials.user;
         console.log(user.email + ' signed in');
 
-        // Generate Token
+        // Generate Token Correctly
         const token = await user.getIdToken();
-
+        
         res.status(200).json({
             message: 'Developer Signed In Successfully',
             token: token // Return token in response
         });
     } catch (error) {
+        console.error("Signin Error:", error);
         res.status(400).json({ message: error.message });
     }
 };
