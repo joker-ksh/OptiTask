@@ -23,5 +23,10 @@ dist-ssr
 *.sln
 *.sw?
 
+# Ignore env's
 .env
 **/.env
+
+
+# Ignore Firebase service account key
+Backend/config/serviceAccountKey.json

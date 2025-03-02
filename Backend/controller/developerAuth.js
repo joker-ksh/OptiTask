@@ -4,8 +4,8 @@ const { setDoc, doc } = require("firebase/firestore");
 const pdfparse = require('pdf-parse');
 const axios = require('axios');
 const dotenv = require('dotenv');
-dotenv.config();
 const { GoogleGenerativeAI } = require("@google/generative-ai");
+dotenv.config();
 
 const DeveloperSignUp = async (req,res) => {
     const {name,email,password,resume} = req.body;
