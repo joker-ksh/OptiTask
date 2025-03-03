@@ -21,7 +21,7 @@ const ManagerSignUp = () => {
     // console.log("Signup Data:", formData);
 
     try {
-      const res = await axios.post("http://localhost:5000/manager/signup", formData, {
+      const res = await axios.post(import.meta.env.VITE_SERVER_URL+"/manager/signup", formData, {
         headers: {
           "Content-Type": "application/json",
         },

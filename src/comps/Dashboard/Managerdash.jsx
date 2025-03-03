@@ -23,7 +23,7 @@ const Managerdash = () => {
       const token = localStorage.getItem("authTokenManager");
 
       const response = await axios.post(
-        "http://localhost:5000/manager/getTasks",
+        import.meta.env.VITE_SERVER_URL +"/manager/getTasks",
         { uid },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -93,7 +93,7 @@ const Managerdash = () => {
       setUploading(true);
 
       await axios.post(
-        "http://localhost:5000/manager/createtask",
+        import.meta.env.VITE_SERVER_URL+"/manager/createtask",
         { ...taskData, uid },
         { headers: { Authorization: `Bearer ${token}` } }
       );

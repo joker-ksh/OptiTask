@@ -68,7 +68,7 @@ const DeveloperSignUp = () => {
     setLoading(true); // Start loading
 
     try {
-      const res = await axios.post("http://localhost:5000/developer/signup", formData);
+      const res = await axios.post(import.meta.env.VITE_SERVER_URL+"/developer/signup", formData);
       const data = await res.data;
       localStorage.setItem("authTokenDeveloper", data.token);
       localStorage.setItem("uid", data.uid);

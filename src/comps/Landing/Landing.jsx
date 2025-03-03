@@ -16,9 +16,10 @@ const Landing = () => {
 
     try {
       let res;
-
+      const url = import.meta.env.VITE_SERVER_URL;
+      console.log(url)
       if (userType === "manager") {
-        res = await axios.post("http://localhost:5000/manager/signin", formData, {
+        res = await axios.post(`${url}/manager/signin`, formData, {
           headers: { "Content-Type": "application/json" },
         });
         
@@ -30,7 +31,7 @@ const Landing = () => {
       } 
       // Developer login logic
       else {
-        res = await axios.post("http://localhost:5000/developer/signin", formData, {
+        res = await axios.post(import.meta.env.VITE_SERVER_URL+"/developer/signin", formData, {
           headers: { "Content-Type": "application/json" },
         });
         const data = res.data; 

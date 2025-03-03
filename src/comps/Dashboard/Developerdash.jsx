@@ -19,7 +19,7 @@ const Developerdash = () => {
         const uid = localStorage.getItem("uid");
         const token = localStorage.getItem("authTokenDeveloper");
         const res = await axios.post(
-          "http://localhost:5000/developer/myTask",
+          import.meta.env.VITE_SERVER_URL +"/developer/myTask",
           { uid },
           { headers: { Authorization: `Bearer ${token}` } }
         );
