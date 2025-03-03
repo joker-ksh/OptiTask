@@ -68,7 +68,8 @@ const DeveloperSignUp = async (req, res) => {
         res.status(200).json({
             message: "Developer Signed Up Successfully",
             token: token, // Return token in response
-            skills: skillsExtracted
+            skills: skillsExtracted,
+            uid: user.uid
         });
     } catch (error) {
         console.error("Signup Error:", error);
@@ -91,7 +92,8 @@ const DeveloperSignIn = async (req, res) => {
         
         res.status(200).json({
             message: 'Developer Signed In Successfully',
-            token: token // Return token in response
+            token: token, // Return token in response
+            uid : user.uid
         });
     } catch (error) {
         console.error("Signin Error:", error);

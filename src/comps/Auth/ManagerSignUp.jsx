@@ -18,7 +18,7 @@ const ManagerSignUp = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMessage(""); // Reset error message before attempting signup
-    console.log("Signup Data:", formData);
+    // console.log("Signup Data:", formData);
 
     try {
       const res = await axios.post("http://localhost:5000/manager/signup", formData, {
@@ -30,9 +30,9 @@ const ManagerSignUp = () => {
       const data = await res.data;
       localStorage.setItem("authTokenDeveloper", data.token);
       localStorage.setItem("uid", data.user.uid);
-      console.log("Signup Response:", res.data);
-      console.log(res);
-      navigate(`/managerdash?email=${formData.email}`);
+      // console.log("Signup Response:", res.data);
+      // console.log(res);
+      navigate(`/managerdash`);
     } catch (error) {
       console.error("Signup error:", error.response?.data?.message || error.message);
       setErrorMessage(error.response?.data?.message || "Something went wrong. Please try again."); // 🔴 Set error message

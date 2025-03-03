@@ -1,6 +1,6 @@
 const express = require('express');
 const { ManagerSignUp,ManagerSignIn} = require('../controller/ManagersAuth')
-const {createTask} = require('../controller/TaskController')
+const {createTask,getmanagersTasks} = require('../controller/TaskController')
 const router = express.Router();
 const {protectRoute} = require('../middleware/authMiddleware')
 
@@ -10,7 +10,8 @@ router.post('/signin', ManagerSignIn);
 
   
 
-// Add protectRoute before any route that requires authentication
+
 router.post("/createtask",protectRoute,createTask);
 
+router.post('/getTasks',protectRoute,getmanagersTasks);
 module.exports = router;

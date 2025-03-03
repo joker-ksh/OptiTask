@@ -71,7 +71,8 @@ const DeveloperSignUp = () => {
       const res = await axios.post("http://localhost:5000/developer/signup", formData);
       const data = await res.data;
       localStorage.setItem("authTokenDeveloper", data.token);
-      navigate(`/developerdash?${formData.email}`);
+      localStorage.setItem("uid", data.uid);
+      navigate(`/developerdash`);
     } catch (error) {
       alert("Signup failed. Try again.");
     } finally {

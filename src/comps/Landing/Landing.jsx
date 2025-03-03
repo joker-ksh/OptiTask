@@ -25,8 +25,8 @@ const Landing = () => {
         const data = res.data; 
         localStorage.setItem("authTokenManager", data.token);
         localStorage.setItem("uid", data.user.uid);
-        console.log(res);
-        navigate(`/managerdash?email=${formData.email}`);
+        // console.log(res);
+        navigate(`/managerdash`);
       } 
       // Developer login logic
       else {
@@ -34,10 +34,13 @@ const Landing = () => {
           headers: { "Content-Type": "application/json" },
         });
         const data = res.data; 
+        // console.log(data);
+        // console.log(data.token);
+        // console.log(data.uid);
         localStorage.setItem("authTokenDeveloper", data.token);
-        localStorage.setItem("uid", data.user.uid);
+        localStorage.setItem("uid", data.uid);
         console.log(res);
-        navigate(`/developerdash?email=${formData.email}`);
+        navigate(`/developerdash`);
       }
 
       console.log(`${userType} logged in successfully`);

@@ -1,23 +1,40 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 
 const Managerdash = () => {
-  const [taskData, setTaskData] = useState({
-    task: "",
-    pdf: null,
-    deadline: "",
-  });
+  const [taskData, setTaskData] = useState({ task: "", pdf: null, deadline: "" });
   const [taskPreview, setTaskPreview] = useState(null);
-  const [tasks, setTasks] = useState([
-    { id: 1, task: "Task A", deadline: "2025-03-10" },
-    { id: 2, task: "Task B", deadline: "2025-04-15" },
-    { id: 3, task: "Task C", deadline: "2025-05-20" },
-  ]);
+  const [tasks, setTasks] = useState([]);
   const [uploadStatus, setUploadStatus] = useState("");
   const [uploading, setUploading] = useState(false);
   const [noTeamAvailable, setNoTeamAvailable] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+
+  // Ref to clear file input field after successful upload
+  const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    fetchTasks();
+  }, []);
+
+  const fetchTasks = async () => {
+    try {
+      const uid = localStorage.getItem("uid");
+      const token = localStorage.getItem("authTokenManager");
+
+      const response = await axios.post(
+        "http://localhost:5000/manager/getTasks",
+        { uid },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      console.log("Fetched Tasks:", response.data);
+      setTasks(Array.isArray(response.data.tasks) ? response.data.tasks : []);
+    } catch (error) {
+      console.error("Error fetching tasks:", error);
+      setTasks([]);
+    }
+  };
 
   const handleChange = (e) => {
     setTaskData({ ...taskData, [e.target.name]: e.target.value });
@@ -66,7 +83,7 @@ const Managerdash = () => {
 
     try {
       const token = localStorage.getItem("authTokenManager");
-      const uid = localStorage.getItem("uid"); // Fetch the UID from localStorage
+      const uid = localStorage.getItem("uid");
 
       if (!token || !uid) {
         setUploadStatus("Not authenticated. Please log in again.");
@@ -75,50 +92,52 @@ const Managerdash = () => {
 
       setUploading(true);
 
-      const response = await axios.post(
+      await axios.post(
         "http://localhost:5000/manager/createtask",
-        { ...taskData, uid }, // Include the UID in the body of the request
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        { ...taskData, uid },
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      if (response.data) {
-        toast.success("Task created successfully!", {
-          position: "top-right",
-          autoClose: 3000,
-        });
-
-        setTasks([...tasks, { ...taskData, id: tasks.length + 1 }]);
-        setTaskData({ task: "", pdf: null, deadline: "" });
-        setTaskPreview(null);
-        setUploadStatus("");
+      setSuccessMessage("Task created successfully!");
+      // Clear form fields
+      setTaskData({ task: "", pdf: null, deadline: "" });
+      setTaskPreview(null);
+      setUploadStatus("");
+      setNoTeamAvailable(false);
+      
+      // Clear the file input using ref
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
       }
+
+      // Re-render by fetching tasks
+      fetchTasks();
     } catch (error) {
       console.error("Error creating task:", error.response?.data || error.message);
-      toast.error(error.response?.data?.message || "Failed to create task.", {
-        position: "top-right",
-        autoClose: 3000,
-      });
       setNoTeamAvailable(true);
     } finally {
       setUploading(false);
     }
   };
 
+  // Format the date string to a more readable format
+  const formatDate = (dateString) => {
+    const options = { year: "numeric", month: "short", day: "numeric" };
+    return new Date(dateString).toLocaleDateString(undefined, options);
+  };
+
   return (
     <div className="w-screen min-h-screen bg-gradient-to-br from-black to-gray-800 flex flex-col p-6">
-      <ToastContainer />
       <nav className="w-full bg-gray-900 text-white p-4 flex justify-between items-center rounded-lg shadow-lg">
         <h1 className="text-lg font-semibold">Manager's Dashboard</h1>
         <button className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md">Logout</button>
       </nav>
 
       <div className="flex flex-col md:flex-row gap-6 mt-6">
+        {/* Create Task Form */}
         <div className="w-full md:w-1/3 bg-gray-900 p-6 rounded-lg shadow-lg border border-gray-700 max-h-[70vh] overflow-y-auto">
           <h2 className="text-xl font-semibold text-white mb-4">Create Task</h2>
+          {successMessage && <p className="text-green-400 mb-4">{successMessage}</p>}
           <form onSubmit={handleSubmit} className="space-y-4">
             <input
               type="text"
@@ -132,6 +151,7 @@ const Managerdash = () => {
             <input
               type="file"
               accept="application/pdf"
+              ref={fileInputRef}
               onChange={handleFileUpload}
               required
               disabled={uploading}
@@ -149,15 +169,13 @@ const Managerdash = () => {
               required
               className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-md text-white"
             />
-
             {noTeamAvailable && (
               <p className="text-red-400 mt-2 text-center">No team is available currently.</p>
             )}
-
             <button
               type="submit"
               disabled={uploading}
-              className={`w-full ${uploading ? "bg-gray-600" : "bg-indigo-600"} hover:${uploading ? "" : "bg-indigo-700"} text-white font-semibold py-3 rounded-md`}
+              className={`w-full ${uploading ? "bg-gray-600" : "bg-indigo-600 hover:bg-indigo-700"} text-white font-semibold py-3 rounded-md`}
             >
               {uploading ? (
                 <div className="w-5 h-5 border-4 border-white border-t-transparent animate-spin rounded-full mx-auto"></div>
@@ -167,16 +185,37 @@ const Managerdash = () => {
             </button>
           </form>
         </div>
+
+        {/* Created Tasks List */}
         <div className="w-full md:w-2/3 bg-gray-900 p-6 rounded-lg shadow-lg border border-gray-700 overflow-y-auto max-h-[70vh]">
           <h2 className="text-xl font-semibold text-white mb-4">Created Tasks</h2>
-          <ul className="space-y-3">
-            {tasks.map((task) => (
-              <li key={task.id} className="p-3 bg-gray-800 border border-gray-700 rounded-md text-white flex justify-between">
-                <span>{task.task}</span>
-                <span className="px-2 py-1 bg-red-600 text-white rounded-md text-sm">{task.deadline}</span>
-              </li>
-            ))}
-          </ul>
+          {tasks.length === 0 ? (
+            <p className="text-gray-400 text-center py-4">No tasks available</p>
+          ) : (
+            <ul className="space-y-3">
+              {tasks.map((task) => (
+                <button
+                  key={task.id}
+                  onClick={() => console.log(`Redirecting to task: ${task.id}`)} // Replace with your navigation logic
+                  className="w-full text-left p-3 bg-gray-800 border border-gray-700 rounded-md text-white hover:bg-gray-700 transition"
+                >
+                  <div className="grid grid-cols-12 gap-2 items-center w-full">
+                    <div className="col-span-6 font-semibold truncate pr-2">{task.task}</div>
+                    <div className="col-span-3 text-center">
+                      <span className="bg-green-600 px-2 py-1 rounded-md text-sm inline-block w-full">
+                        {task.assignedDevelopers?.length || 0} Developers
+                      </span>
+                    </div>
+                    <div className="col-span-3 text-center">
+                      <span className="bg-red-600 px-2 py-1 rounded-md text-sm inline-block w-full">
+                        {formatDate(task.deadline)}
+                      </span>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
     </div>
