@@ -1,5 +1,5 @@
 const express = require('express');
-const { ManagerSignUp,ManagerSignIn} = require('../controller/ManagersAuth')
+const { ManagerSignUp,ManagerSignIn} = require('../controller/managersAuth')
 const {createTask,getmanagersTasks} = require('../controller/TaskController')
 const router = express.Router();
 const {protectRoute} = require('../middleware/authMiddleware')
