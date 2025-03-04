@@ -198,7 +198,7 @@ const Managerdash = () => {
               {tasks.map((task) => (
                 <button
                   key={task.id}
-                  onClick={() => navigate(`/managerdash/task?tashId=${task.id}`)}
+                  onClick={() => navigate(`/managerdash/task?taskId=${task.id}`)}
                   className="w-full text-left p-3 bg-gray-800 border border-gray-700 rounded-md text-white hover:bg-gray-700 transition"
                 >
                   <div className="grid grid-cols-12 gap-2 items-center w-full">

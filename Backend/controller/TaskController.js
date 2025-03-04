@@ -1,5 +1,5 @@
 const { db } = require('../config/firebase');
-const { getDocs, collection, doc, setDoc, writeBatch, updateDoc, arrayUnion,getDoc } = require("firebase/firestore");
+const { getDocs, collection, doc, setDoc, writeBatch, updateDoc, arrayUnion,getDoc,arrayRemove } = require("firebase/firestore");
 const pdfparse = require('pdf-parse');
 const axios = require('axios');
 const dotenv = require('dotenv');
@@ -360,7 +360,41 @@ const changTaskProgress = async (req,res) => {
 }
 
 
-const deleteTask = async (req,res) => {
+const deleteTask = async (req, res) => {
+  const { taskId } = req.body;
+  if (!taskId) {
+    return res.status(400).json({ message: "Please provide a task ID" });
+  }
 
-}
-module.exports = { createTask,getmanagersTasks,getDevelopersTask,changTaskProgress,getTask};
+  try {
+    const taskRef = doc(db, "tasks", taskId);
+    const taskSnap = await getDoc(taskRef);
+    if (!taskSnap.exists()) {
+      return res.status(404).json({ message: "Task not found" });
+    }
+
+    const taskData = taskSnap.data();
+    const assignedDevelopers = taskData.assignedDevelopers;
+    const managerId = taskData.createdBy;
+
+    const batch = writeBatch(db);
+    assignedDevelopers.forEach((dev) => {
+      const devRef = doc(db, "developers", dev.uid);
+      batch.update(devRef, { task: "", available: true });
+    });
+    batch.delete(taskRef);
+
+    const managerRef = doc(db, "managers", managerId);
+    // Use arrayRemove to remove the taskId from the manager's tasks array.
+    batch.update(managerRef, { tasks: arrayRemove(taskId) });
+
+    await batch.commit();
+    res.status(200).json({ message: "Task deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting task:", error);
+    res.status(500).json({ message: "Internal Server Error", error: error.message });
+  }
+};
+
+
+module.exports = { createTask,getmanagersTasks,getDevelopersTask,changTaskProgress,getTask,deleteTask};
