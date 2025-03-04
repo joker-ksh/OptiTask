@@ -140,6 +140,7 @@ const createTask = async (req, res) => {
         uid: dev.uid,
         email: dev.email,
         name: dev.name,
+        taskStatus: "In Progress",
       })),
       createdAt: new Date().toISOString(),
       createdBy: uid,
@@ -259,42 +260,107 @@ const getmanagersTasks = async (req,res) => {
     }   
 }
 
-const getDevelopersTask = async (req,res) => {
-    const { uid } = req.body;
+const getDevelopersTask = async (req, res) => {
+  const { uid } = req.body;
+  try {
+    const developerRef = doc(db, "developers", uid);
+    const developerSnap = await getDoc(developerRef);
+    if (!developerSnap.exists()) {
+      return res.status(404).json({ message: "Developer not found" });
+    }
+    console.log(developerSnap.data());
+    const developerData = developerSnap.data();
+    if (!developerData.task) {
+      return res.status(404).json({ message: "No task assigned" });
+    }
+    const taskRef = doc(db, "tasks", developerData.task);
+    const taskSnap = await getDoc(taskRef);
+    if (!taskSnap.exists()) {
+      return res.status(404).json({ message: "Task not found" });
+    }
+    const managerId = taskSnap.data().createdBy;
+    const managerRef = doc(db, "managers", managerId);
+    const managerSnap = await getDoc(managerRef);
+    if (!managerSnap.exists()) {
+      return res.status(404).json({ message: "Manager not found" });
+    }
+    const email = managerSnap.data().email;
+    const name = managerSnap.data().name;
+    console.log(email);
+
+    // Add taskStatus from the task document, or use a default.
+    const taskStatus = taskSnap.data().status || "In Progress";
+
+    res.status(200).json({
+      id: developerData.task,
+      managerId,
+      managerEmail: email,
+      managerName: name,
+      taskStatus, // New field added
+      ...taskSnap.data(),
+    });
+  } catch (error) {
+    console.error("Error fetching task:", error);
+    res
+      .status(500)
+      .json({ message: "Internal Server Error", error: error.message });
+  }
+};
+
+
+const getTask = async (req,res) => {
+    const { taskId } = req.body;
+    if (!taskId) {
+        return res.status(400).json({ message: "Please provide a task ID" });
+    }
+    
     try{
-        const developerRef = doc(db, "developers", uid);
-        const developerSnap = await getDoc(developerRef);
-        if (!developerSnap.exists()) {
-            return res.status(404).json({ message: "Developer not found" });
+        const taskRef = doc(db, "tasks", taskId);
+        const taskSnap = await getDoc(taskRef);
+        if (!taskSnap.exists()) {
+            return res.status(404).json
+            ({ message: "Task not found" });
         }
-        console.log(developerSnap.data());
-        const developerData = developerSnap.data();
-        // console.log(developerData.task);
-        if (!developerData.task) {
-            return res.status(404).json({ message: "No task assigned" });
-        }
-        // res.status(200).json({ task: developerData.task });
-        const taskRef = doc(db, "tasks", developerData.task);
+        res.status(200).json({ id: taskId, ...taskSnap.data()
+        }); 
+    }
+    catch(error){
+        console.error("Error fetching task:", error);
+        res.status(500).json({ message: "Internal Server Error", error: error.message });
+    }
+}
+
+const changTaskProgress = async (req,res) => {
+    const { taskId, status, uid } = req.body;
+    if (!taskId || !status || !uid) {
+        return res.status(400).json({ message: "Please provide all fields" });
+    }
+    
+    try{
+        const taskRef = doc(db, "tasks", taskId);
         const taskSnap = await getDoc(taskRef);
         if (!taskSnap.exists()) {
             return res.status(404).json({ message: "Task not found" });
         }
 
-        const managerId = taskSnap.data().createdBy;
-        const managerRef = doc(db,"managers",managerId);
-        const managerSnap = await getDoc(managerRef);
-        if(!managerSnap.exists()){
-          return res.status(404).json({message : "Manager not found"});
+        const taskData = taskSnap.data();
+        const assignedDevelopers = taskData.assignedDevelopers;
+        const developerIndex = assignedDevelopers.findIndex((dev) => dev.uid === uid);
+        if (developerIndex === -1) {
+            return res.status(403).json({ message: "You are not assigned to this task" });
         }
-        const email = managerSnap.data().email;
-        const name = managerSnap.data().name;
-        console.log(email)
 
-
-        res.status(200).json({ id: developerData.task,managerId,managerEmail : email,managerName : name, ...taskSnap.data() });
-    }catch(error){
-        console.error("Error fetching task:", error);
+        assignedDevelopers[developerIndex].taskStatus = status;
+        await updateDoc(taskRef, { assignedDevelopers });
+        res.status(200).json({ message: "Task status updated successfully" });
+    } catch (error) {
+        console.error("Error updating task status:", error);
         res.status(500).json({ message: "Internal Server Error", error: error.message });
     }
 }
-module.exports = { createTask,getmanagersTasks,getDevelopersTask};
+
+
+const deleteTask = async (req,res) => {
+
+}
+module.exports = { createTask,getmanagersTasks,getDevelopersTask,changTaskProgress,getTask};

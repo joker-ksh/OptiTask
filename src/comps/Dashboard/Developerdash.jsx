@@ -5,12 +5,13 @@ const Developerdash = () => {
   const [assignedTask, setAssignedTask] = useState(null);
   const [teamMembers, setTeamMembers] = useState([]);
   const [manager, setManager] = useState(null);
-  const [taskRemoved, setTaskRemoved] = useState(false);
   const [messages, setMessages] = useState([
     { id: 1, sender: "Alice", content: "Hello team!" },
     { id: 2, sender: "Charlie", content: "Please check your tasks." },
   ]);
   const [newMessage, setNewMessage] = useState("");
+  // New state for task status update (read-only in UI if already Completed)
+  const [taskStatus, setTaskStatus] = useState("In Progress");
 
   // Fetch task data from the server and update state.
   useEffect(() => {
@@ -19,7 +20,7 @@ const Developerdash = () => {
         const uid = localStorage.getItem("uid");
         const token = localStorage.getItem("authTokenDeveloper");
         const res = await axios.post(
-          import.meta.env.VITE_SERVER_URL +"/developer/myTask",
+          import.meta.env.VITE_SERVER_URL + "/developer/myTask",
           { uid },
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -31,15 +32,29 @@ const Developerdash = () => {
         }
 
         // Map JSON fields to our state.
-        setAssignedTask({
+        const taskData = {
           id: res.data.id,
           title: res.data.task,
-          status: "In Progress", // Default status.
+          status: res.data.status || "In Progress",
           deadline: res.data.deadline,
           taskLink: res.data.pdf,
-        });
+        };
+
         // Set team members from the assignedDevelopers array.
-        setTeamMembers(res.data.assignedDevelopers);
+        const developersFromResponse = res.data.assignedDevelopers || [];
+        setTeamMembers(developersFromResponse);
+
+        // Check if the logged-in developer's subtask status is Completed.
+        const uidStored = localStorage.getItem("uid");
+        const myDev = developersFromResponse.find((member) => member.uid === uidStored);
+        if (myDev && myDev.taskStatus === "Completed") {
+          taskData.status = "Completed";
+        }
+
+        // Set task and update local taskStatus state.
+        setAssignedTask(taskData);
+        setTaskStatus(taskData.status);
+
         // Set manager details.
         setManager({
           id: res.data.managerId,
@@ -65,8 +80,26 @@ const Developerdash = () => {
     }
   };
 
-  const handleLeaveTask = () => {
-    setTaskRemoved(true);
+  // Function to update task status on the backend.
+  // This control is only visible if task status is not Completed.
+  const handleUpdateStatus = async () => {
+    if (!assignedTask) return;
+    try {
+      const token = localStorage.getItem("authTokenDeveloper");
+      const uid = localStorage.getItem("uid");
+      console.log(uid, token, assignedTask.id, taskStatus);
+      await axios.post(
+        import.meta.env.VITE_SERVER_URL + "/developer/updateTask",
+        { taskId: assignedTask.id, status: taskStatus, uid: uid },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      alert("Task status updated successfully");
+      // Update local task status.
+      setAssignedTask({ ...assignedTask, status: taskStatus });
+    } catch (error) {
+      console.error("Error updating task status:", error);
+      alert("Failed to update task status");
+    }
   };
 
   // Fill in vacant team member slots so that there are always 4 items.
@@ -80,14 +113,17 @@ const Developerdash = () => {
     }),
   ];
 
-  // Get the logged-in developer's subtask.
+  // Get the logged-in developer's subtask and name.
   const myUid = localStorage.getItem("uid");
   const mySubtask =
     teamMembers.find((member) => member.uid === myUid)?.subtask ||
     "No subtask assigned";
+  const myName =
+    teamMembers.find((member) => member.uid === myUid)?.name || "Developer";
 
   return (
     <div className="min-h-screen bg-gray-800 p-6 flex flex-col gap-6">
+      {/* Navigation Bar */}
       <nav className="w-full bg-indigo-900 text-white p-4 flex justify-between items-center rounded-lg shadow-lg">
         <h1 className="text-lg font-semibold">Developer Dashboard</h1>
         <button className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition duration-200">
@@ -95,9 +131,13 @@ const Developerdash = () => {
         </button>
       </nav>
 
-      {/* Use items-stretch so both columns have equal height */}
+      {/* Developer Welcome Banner */}
+      <div className="w-full bg-gray-700 text-white p-4 rounded-lg shadow-lg mb-6">
+        <h2 className="text-2xl font-bold">Welcome, {myName}!</h2>
+      </div>
+
       <div className="flex flex-col md:flex-row gap-6 items-stretch">
-        {(!assignedTask || taskRemoved) ? (
+        {!assignedTask ? (
           <div className="w-full md:w-1/2 flex justify-center items-center">
             <p className="text-gray-400 text-lg font-semibold">No task assigned</p>
           </div>
@@ -106,9 +146,8 @@ const Developerdash = () => {
             <div className="bg-gray-900 p-6 rounded-lg shadow-lg border border-gray-700 flex flex-col">
               <h2 className="text-xl font-semibold text-white mb-3">Assigned Task</h2>
               <h3 className="text-4xl font-bold text-green-500">{assignedTask.title}</h3>
-              {/* Display logged-in developer's subtask in yellow */}
               <p className="text-white mt-2 font-bold">
-                <span className="text-indigo-300 text-xl">Your Subtask : </span> {mySubtask}
+                <span className="text-indigo-500 text-xl">Your Subtask: </span> {mySubtask}
               </p>
               {assignedTask.taskLink && (
                 <a
@@ -121,7 +160,7 @@ const Developerdash = () => {
                 </a>
               )}
               <p className="mt-2 text-gray-400">
-                Status:{" "}
+                Sub Task Status:{" "}
                 <span
                   className={`font-bold ${
                     assignedTask.status === "Completed"
@@ -137,6 +176,26 @@ const Developerdash = () => {
               {assignedTask.deadline && (
                 <p className="text-gray-300 mt-2">Deadline: {assignedTask.deadline}</p>
               )}
+              {/* Only show the update input if the task is not Completed */}
+              {assignedTask.status !== "Completed" && (
+                <div className="mt-4">
+                  <label className="text-white font-semibold">Update SubTask Status:</label>
+                  <select
+                    value={taskStatus}
+                    onChange={(e) => setTaskStatus(e.target.value)}
+                    className="ml-2 p-2 bg-gray-800 text-white border border-gray-700 rounded-md"
+                  >
+                    <option value="In Progress">In Progress</option>
+                    <option value="Completed">Completed</option>
+                  </select>
+                  <button
+                    onClick={handleUpdateStatus}
+                    className="ml-4 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md transition duration-200"
+                  >
+                    Update
+                  </button>
+                </div>
+              )}
               <div className="bg-gray-800 p-4 rounded-md mt-4 border border-gray-600">
                 <h2 className="text-lg font-semibold text-white">Manager Details</h2>
                 {manager ? (
@@ -149,12 +208,6 @@ const Developerdash = () => {
                   <p className="text-gray-300">Loading manager details...</p>
                 )}
               </div>
-              <button
-                onClick={handleLeaveTask}
-                className="w-full mt-4 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition duration-200"
-              >
-                Leave Task
-              </button>
             </div>
 
             <div className="bg-gray-900 p-6 rounded-lg shadow-lg border border-gray-700">

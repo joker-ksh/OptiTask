@@ -14,6 +14,7 @@ const DeveloperSignUp = () => {
   const [uploadStatus, setUploadStatus] = useState("");
   const [uploadStatusColor, setUploadStatusColor] = useState("text-blue-400");
   const [loading, setLoading] = useState(false); // Loading state for form submission
+  const [successMessage, setSuccessMessage] = useState(""); // Success message state
 
   const navigate = useNavigate();
 
@@ -35,9 +36,9 @@ const DeveloperSignUp = () => {
   const uploadToCloudinary = async (file) => {
     const cloudName = import.meta.env.VITE_APP_CLOUDINARY_CLOUD_NAME;
     const uploadPreset = import.meta.env.VITE_APP_CLOUDINARY_UPLOAD_PRESET;
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", uploadPreset);
+    const data = new FormData();
+    data.append("file", file);
+    data.append("upload_preset", uploadPreset);
 
     try {
       setUploading(true);
@@ -45,7 +46,7 @@ const DeveloperSignUp = () => {
       setUploadStatusColor("text-blue-400");
       const res = await axios.post(
         `https://api.cloudinary.com/v1_1/${cloudName}/upload`,
-        formData
+        data
       );
       setFormData((prev) => ({ ...prev, resume: res.data.secure_url }));
       setUploadStatus("Upload successful!");
@@ -68,11 +69,14 @@ const DeveloperSignUp = () => {
     setLoading(true); // Start loading
 
     try {
-      const res = await axios.post(import.meta.env.VITE_SERVER_URL+"/developer/signup", formData);
+      const res = await axios.post(
+        import.meta.env.VITE_SERVER_URL + "/developer/signup",
+        formData
+      );
       const data = await res.data;
       localStorage.setItem("authTokenDeveloper", data.token);
       localStorage.setItem("uid", data.uid);
-      navigate(`/developerdash`);
+      setSuccessMessage("Developer created");
     } catch (error) {
       alert("Signup failed. Try again.");
     } finally {
@@ -85,24 +89,79 @@ const DeveloperSignUp = () => {
       <div className="w-full max-w-5xl bg-gray-900 p-6 md:p-8 rounded-xl shadow-lg flex flex-col md:flex-row gap-6">
         <div className="w-full md:w-1/2">
           <h2 className="text-2xl md:text-3xl font-bold text-white mb-6 text-center">
-            Developer Signup
+            Create Developer
           </h2>
           <form onSubmit={handleSubmit}>
-            <input type="text" name="name" placeholder="Full Name" value={formData.name} onChange={handleChange} required disabled={loading} className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-md text-white mb-4 disabled:opacity-50" />
-            <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleChange} required disabled={loading} className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-md text-white mb-4 disabled:opacity-50" />
-            <input type="password" name="password" placeholder="Password" value={formData.password} onChange={handleChange} required disabled={loading} className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-md text-white mb-4 disabled:opacity-50" />
-            <input type="file" accept="application/pdf" onChange={handleResumeUpload} required disabled={loading || uploading} className="w-full bg-gray-800 text-gray-300 px-4 py-2 border border-gray-700 rounded-md mb-4 disabled:opacity-50" />
-            {uploadStatus && <p className={`text-center ${uploadStatusColor}`}>{uploadStatus}</p>}
-            <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-md transition duration-200 flex justify-center items-center disabled:opacity-50" disabled={loading || uploading}>
-              {loading ? <span className="animate-spin h-5 w-5 border-4 border-white border-t-transparent rounded-full"></span> : "Sign Up"}
+            <input
+              type="text"
+              name="name"
+              placeholder="Full Name"
+              value={formData.name}
+              onChange={handleChange}
+              required
+              disabled={loading}
+              className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-md text-white mb-4 disabled:opacity-50"
+            />
+            <input
+              type="email"
+              name="email"
+              placeholder="Email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+              disabled={loading}
+              className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-md text-white mb-4 disabled:opacity-50"
+            />
+            <input
+              type="password"
+              name="password"
+              placeholder="Password"
+              value={formData.password}
+              onChange={handleChange}
+              required
+              disabled={loading}
+              className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-md text-white mb-4 disabled:opacity-50"
+            />
+            <input
+              type="file"
+              accept="application/pdf"
+              onChange={handleResumeUpload}
+              required
+              disabled={loading || uploading}
+              className="w-full bg-gray-800 text-gray-300 px-4 py-2 border border-gray-700 rounded-md mb-4 disabled:opacity-50"
+            />
+            {uploadStatus && (
+              <p className={`text-center ${uploadStatusColor}`}>
+                {uploadStatus}
+              </p>
+            )}
+            <button
+              type="submit"
+              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-md transition duration-200 flex justify-center items-center disabled:opacity-50"
+              disabled={loading || uploading}
+            >
+              {loading ? (
+                <span className="animate-spin h-5 w-5 border-4 border-white border-t-transparent rounded-full"></span>
+              ) : (
+                "Create Developer"
+              )}
             </button>
           </form>
+          {successMessage && (
+            <p className="text-green-400 text-center mt-4">{successMessage}</p>
+          )}
         </div>
         <div className="w-full md:w-1/2 flex items-center justify-center">
           {resumePreview ? (
-            <iframe src={resumePreview} className="hidden md:block w-full h-96 border border-gray-700 rounded-md shadow-md"></iframe>
+            <iframe
+              src={resumePreview}
+              className="hidden md:block w-full h-96 border border-gray-700 rounded-md shadow-md"
+              title="Resume Preview"
+            ></iframe>
           ) : (
-            <p className="text-gray-400 text-center">Resume preview will appear here after upload.</p>
+            <p className="text-gray-400 text-center">
+              Developer Profile will appear here after upload.
+            </p>
           )}
         </div>
       </div>
