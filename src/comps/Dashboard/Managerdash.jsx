@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 const Managerdash = () => {
   const [taskData, setTaskData] = useState({ task: "", pdf: null, deadline: "" });
@@ -128,6 +128,13 @@ const Managerdash = () => {
     <div className="w-screen min-h-screen bg-gradient-to-br from-black to-gray-800 flex flex-col p-6">
       <nav className="w-full bg-gray-900 text-white p-4 flex justify-between items-center rounded-lg shadow-lg">
         <h1 className="text-lg font-semibold">Manager's Dashboard</h1>
+        <div>
+          <Link to="/DeveloperSignUp">
+            <button className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-md transition duration-200">
+              Create Developer
+            </button>
+          </Link>
+        </div>
       </nav>
 
       <div className="flex flex-col md:flex-row gap-6 mt-6">
@@ -156,7 +163,11 @@ const Managerdash = () => {
             />
             {uploadStatus && <p className="mt-2 text-sm text-blue-400">{uploadStatus}</p>}
             {taskPreview && (
-              <iframe src={taskPreview} className="w-full h-48 border border-gray-700 rounded-md shadow-md mb-4"></iframe>
+              <iframe
+                src={taskPreview}
+                className="w-full h-48 border border-gray-700 rounded-md shadow-md mb-4"
+                title="Task Preview"
+              ></iframe>
             )}
             <input
               type="date"

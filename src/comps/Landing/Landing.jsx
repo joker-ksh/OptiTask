@@ -1,17 +1,17 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 const Landing = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
-  const [errorMessage, setErrorMessage] = useState(""); // State for error messages
+  const [errorMessage, setErrorMessage] = useState("");
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setErrorMessage(""); // Reset error message before attempting login
-    
-    if(formData.email !== "man@gmail.com" || formData.password !== "man123") {
+    setErrorMessage("");
+
+    if (formData.email !== "man@gmail.com" || formData.password !== "man123") {
       setErrorMessage("Invalid credentials. Please try again.");
       return;
     }
@@ -38,19 +38,12 @@ const Landing = () => {
 
   return (
     <div className="w-screen h-screen bg-gradient-to-br from-black to-gray-800 flex flex-col">
-      {/* Navbar with Default Manager Credentials on the left and "Create Developer" button on the right */}
+      {/* Navbar with Default Manager Credentials */}
       <nav className="w-full bg-gray-900 py-4 shadow-md flex items-center justify-between px-6">
         <div className="flex flex-col">
           <h1 className="text-white text-xl font-bold">Default Credentials:</h1>
           <h3 className="text-white mt-1">email: man@gmail.com</h3>
           <h3 className="text-white">password: man123</h3>
-        </div>
-        <div>
-          <Link to="/DeveloperSignUp">
-            <button className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-md transition duration-200">
-              Create Developer
-            </button>
-          </Link>
         </div>
       </nav>
 
