@@ -1,6 +1,6 @@
 const { auth, db } = require('../config/firebase');
 const { createUserWithEmailAndPassword, signInWithEmailAndPassword } = require('firebase/auth');
-const { setDoc, doc } = require("firebase/firestore");
+const { setDoc, doc,getDocs,collection } = require("firebase/firestore");
 const pdfparse = require('pdf-parse');
 const axios = require('axios');
 const dotenv = require('dotenv');
@@ -8,7 +8,7 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 dotenv.config();
 
 const DeveloperSignUp = async (req, res) => {
-    const { name, email, password, resume } = req.body;
+    const { name, email, password, resume,techstack } = req.body;
     if (!name || !email || !password || !resume) {
         return res.status(400).json({ message: 'Please fill all the fields' });
     }
@@ -41,7 +41,7 @@ const DeveloperSignUp = async (req, res) => {
         - Rank skills based on experience, project involvement, and explicit mentions.
         - Provide experience duration (e.g., "React: 2 years").
         - Return output in structured JSON format.
-
+        - ${techstack}
         Resume Text:
         """${extractedText}"""
         `;
@@ -59,7 +59,8 @@ const DeveloperSignUp = async (req, res) => {
             email: email,
             resume: resume,
             skills: skillsExtracted,
-            available: true
+            available: true,
+            techstack: techstack
         });
         console.log('Developer added to Firestore');
 
@@ -69,7 +70,8 @@ const DeveloperSignUp = async (req, res) => {
             message: "Developer Signed Up Successfully",
             token: token, // Return token in response
             skills: skillsExtracted,
-            uid: user.uid
+            uid: user.uid,
+            techstack: techstack
         });
     } catch (error) {
         console.error("Signup Error:", error);
@@ -101,4 +103,22 @@ const DeveloperSignIn = async (req, res) => {
     }
 };
 
-module.exports = { DeveloperSignUp, DeveloperSignIn };
+
+const getAllAvailableDevelopers = async (req, res) => {
+    try {
+        const developers = [];
+        const querySnapshot = await getDocs(collection(db, 'developers'));
+        querySnapshot.forEach((doc) => {
+            const developer = doc.data();
+            if (developer.available) {
+                developers.push(developer);
+            }
+        });
+        res.status(200).json(developers);
+    } catch (error) {
+        console.error("Get Developers Error:", error);
+        res.status(400).json({ message: error.message });
+    }
+};  
+
+module.exports = { DeveloperSignUp, DeveloperSignIn,getAllAvailableDevelopers };

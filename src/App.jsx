@@ -8,7 +8,7 @@ import Managerdash from './comps/Dashboard/Managerdash'
 import Task from './comps/Dashboard/Task'
 import Developers from './comps/Landing/Developers'
 import Home from './comps/Landing/Home'
-
+import Dash from './comps/Dashboard/Dash'
 function App() {
   return (
     <Router>
@@ -17,10 +17,10 @@ function App() {
         <Route path='/Landing' element={<Landing />} />
         <Route path='/developer' element={<Developers />} />
         <Route path='/managerSignUp' element={<ManagerSignUp />} />
-        <Route path='/DeveloperSignUp' element={<DeveloperSignUp />} />
-        <Route path='/managerdash' element={<Managerdash />} />
+        <Route path='/DeveloperSignUp' element={<DeveloperSignUp />} /> 
         <Route path='/developerdash' element={<Developerdash />} />
-        <Route path='/managerdash/task' element={<Task />} />
+        <Route path='/manager/task' element={<Task />} />
+        <Route path='/manager' element={<Dash />} />
       </Routes>
     </Router>
   )

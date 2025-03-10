@@ -7,16 +7,36 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 dotenv.config();
 
 const createTask = async (req, res) => {
-  const { task, pdf, deadline, uid } = req.body;
-  if (!task || !pdf || !deadline) {
-    return res.status(400).json({ message: "Please fill all the fields" });
+  const { task, description, deadline, uid } = req.body;
+  if (!task || !description || !deadline) {
+    return res.status(400).json({ message: "Please fill all the fields including tech stack" });
   }
 
   try {
     // Step 1: Fetch the PDF from Cloudinary and parse it
-    const response = await axios.get(pdf, { responseType: "arraybuffer" });
-    const parsedData = await pdfparse(response.data);
-    const extractedText = parsedData.text;
+    const extractedText = description;
+    
+    // New Step 1.1: Extract tech stack using Gemini API from the task description
+    const genAIForTech = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const techModel = genAIForTech.getGenerativeModel({ model: "gemini-2.0-flash" });
+    const techstackPrompt = `
+      Extract the tech stack from the following task description:
+      ${description}
+      Return the result as a JSON array of strings.
+    `;
+    const techstackResponse = await techModel.generateContent(techstackPrompt);
+    const techstackResponseText = techstackResponse.response.text();
+    const jsonMatchTechstack = techstackResponseText.match(/\[.*\]/s);
+    let techstackArray = [];
+    if (jsonMatchTechstack) {
+      try {
+        techstackArray = JSON.parse(jsonMatchTechstack[0]);
+      } catch (error) {
+        console.error("Error parsing techstack JSON:", error);
+      }
+    } else {
+      console.error("No tech stack found in Gemini response.");
+    }
 
     // Step 2: Fetch available developers
     const developersSnapshot = await getDocs(collection(db, "developers"));
@@ -33,37 +53,66 @@ const createTask = async (req, res) => {
           console.error("Error parsing skills JSON:", error);
           devData.skills = { technical_skills: {} }; // Default skills object if parsing fails
         }
+        
+        // Updated techstack handling
+        try {
+          if (devData.techstack) {
+            // If it's a string, check if it's a JSON string or just a plain string
+            if (typeof devData.techstack === 'string') {
+              // If it looks like JSON (starts with [ or {), try to parse it
+              if (devData.techstack.trim().startsWith('[') || devData.techstack.trim().startsWith('{')) {
+                devData.techstack = JSON.parse(devData.techstack.replace(/```json|```/g, ""));
+              } else {
+                // Otherwise, treat it as a single technology or comma-separated list
+                devData.techstack = devData.techstack.split(',').map(item => item.trim());
+              }
+            }
+            // If it's already an array, leave it as is
+          } else {
+            devData.techstack = [];
+          }
+        } catch (error) {
+          console.error("Error parsing techstack JSON:", error);
+          // If parsing fails, treat the original string as a single technology or comma-separated list
+          devData.techstack = typeof devData.techstack === 'string' 
+            ? devData.techstack.split(',').map(item => item.trim()) 
+            : [];
+        }
+        
         availableDevelopers.push({ uid: doc.id, email: devData.email, ...devData });
       }
     });
 
     console.log("Available Developers length : ", availableDevelopers.length);
-    if (availableDevelopers.length < 2) {
-      return res.status(400).json({ message: "No team is available currently." });
+    if (availableDevelopers.length === 0) {
+      return res.status(400).json({ message: "No developers available currently." });
     }
 
     // Step 3: Prepare request for Gemini API for developer assignment
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-
+    
+    // Updated Gemini prompt includes the tech stack from the first response
     const geminiPrompt = `
       You are assigning developers to a task.
       TASK:
       - Name: ${task}
       - Description: ${extractedText.substring(0, 500)}... (truncated for brevity)
       - Deadline: ${deadline}
+      - Required Tech Stack: ${techstackArray.join(', ')}
       AVAILABLE DEVELOPERS:
       ${availableDevelopers
         .map(
           (dev) =>
             `- ID: ${dev.uid}, Name: ${dev.name}, Email: ${dev.email}, Skills: ${JSON.stringify(
               dev.skills.technical_skills || {}
-            )}`
+            )}, Tech Stack: ${Array.isArray(dev.techstack) ? dev.techstack.join(', ') : dev.techstack}`
         )
         .join("\n")}
       INSTRUCTIONS:
       - Return ONLY a JSON array with this format (no explanation, no markdown):
-      - Return the developers who are best fit to a task based on their skills and experience.
+      - Return the developers who are best fit to a task based on their skills, tech stack experience, and overall experience.
+      - Prioritize developers whose tech stack matches the required tech stack for this task.
       - If there are more than 4 developers then select the best of 4 among all of them.
       - If less than four developers are best fit for the task then return only those.
       - Always try to assign developers if they can handle the task.
@@ -72,8 +121,10 @@ const createTask = async (req, res) => {
       [{"uid": "developer-id", "name": "developer-name", "email": "developer-email"}]
     `;
 
+    console.log("before");
     const geminiResponse = await model.generateContent(geminiPrompt);
     const responseText = geminiResponse.response.text();
+    console.log("after");
     console.log("Gemini Response:", responseText);
 
     let cleanedResponse = responseText.replace(/```json|```/g, "").trim();
@@ -104,6 +155,7 @@ const createTask = async (req, res) => {
           name: matchedDev.name,
           email: matchedDev.email,
           skills: matchedDev.skills, // Include skills for subtask generation
+          techstack: matchedDev.techstack || [] // Include developer's tech stack
         };
       } else {
         const fallbackDev = availableDevelopers[0];
@@ -112,6 +164,7 @@ const createTask = async (req, res) => {
           name: fallbackDev.name,
           email: fallbackDev.email,
           skills: fallbackDev.skills,
+          techstack: fallbackDev.techstack || []
         };
       }
     });
@@ -133,9 +186,8 @@ const createTask = async (req, res) => {
     const taskDocRef = doc(collection(db, "tasks"));
     await setDoc(taskDocRef, {
       task,
-      pdf,
       deadline,
-      text: extractedText,
+      description: extractedText,
       assignedDevelopers: assignedDevelopers.map((dev) => ({
         uid: dev.uid,
         email: dev.email,
@@ -156,8 +208,34 @@ const createTask = async (req, res) => {
     await Promise.all(
       assignedDevelopers.map(async (dev) => {
         const developerRef = doc(db, "developers", dev.uid);
+        
+        // Get current techstack from the developer
+        const devDoc = await getDoc(developerRef);
+        let currentTechstack = '';
+        
+        if (devDoc.exists()) {
+          const devData = devDoc.data();
+          currentTechstack = devData.techstack || '';
+        }
+        
+        // Merge existing techstack with new techstack items
+        let updatedTechstack = currentTechstack;
+        if (currentTechstack) {
+          // Convert current techstack to array if it's a string
+          const currentTechArray = typeof currentTechstack === 'string' 
+            ? currentTechstack.split(',').map(item => item.trim())
+            : Array.isArray(currentTechstack) ? currentTechstack : [currentTechstack];
+            
+          // Merge arrays and remove duplicates
+          const combinedTechArray = [...new Set([...currentTechArray, ...techstackArray])];
+          updatedTechstack = combinedTechArray.join(', ');
+        } else {
+          updatedTechstack = techstackArray.join(', ');
+        }
+        
         await updateDoc(developerRef, {
           task: taskDocRef.id,
+          techstack: updatedTechstack // Store as a comma-separated string
         });
       })
     );
@@ -168,18 +246,27 @@ const createTask = async (req, res) => {
       Based on the following task description:
       ${extractedText.substring(0, 500)}... (truncated for brevity)
       
+      Task tech stack: ${techstackArray.join(', ')}
+      
       And the following developers details:
       ${assignedDevelopers
         .map(
           (dev) =>
             `- UID: ${dev.uid}, Name: ${dev.name}, Email: ${dev.email}, Skills: ${JSON.stringify(
               dev.skills?.technical_skills || {}
-            )}`
+            )}, Tech Stack: ${Array.isArray(dev.techstack) ? dev.techstack.join(', ') : dev.techstack}`
         )
         .join("\n")}
       
       Please generate a JSON array where each element is in the format:
       [{"uid": "developer-id", "subtask": "subtask description"}]
+      
+      When assigning subtasks:
+      - Consider each developer's skills and tech stack experience
+      - Assign subtasks that align with their expertise in the required tech stack
+      - Ensure the subtasks collectively cover all aspects of the project
+      - Make subtasks specific and actionable
+      
       Return ONLY the JSON array without any additional explanation.
     `;
 
@@ -216,13 +303,18 @@ const createTask = async (req, res) => {
         name: dev.name,
         email: dev.email,
         subtask: dev.subtask,
+        techstack: Array.isArray(dev.techstack) ? dev.techstack.join(', ') : dev.techstack // Store as string
       })),
     });
 
     res.status(200).json({
       message: "Task Created Successfully",
-      assignedDevelopers: mergedAssignedDevelopers,
+      assignedDevelopers: mergedAssignedDevelopers.map(dev => ({
+        ...dev,
+        techstack: Array.isArray(dev.techstack) ? dev.techstack : dev.techstack.split(',').map(item => item.trim())
+      })),
       teamSize: mergedAssignedDevelopers.length,
+      techstack: techstackArray
     });
   } catch (error) {
     console.error("Error in task creation:", error);

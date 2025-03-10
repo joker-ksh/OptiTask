@@ -12,8 +12,8 @@ router.post('/signin', ManagerSignIn);
   
 
 
-router.post("/createtask",protectRoute,createTask);
-router.post('/getTasks',protectRoute,getmanagersTasks);
+router.post("/createtask",createTask);
+router.post('/getTasks',getmanagersTasks);
 router.post("/getTask",getTask);
 router.post('/deleteTask',deleteTask);
 

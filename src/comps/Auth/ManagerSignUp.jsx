@@ -30,12 +30,10 @@ const ManagerSignUp = () => {
       const data = await res.data;
       localStorage.setItem("authTokenDeveloper", data.token);
       localStorage.setItem("uid", data.user.uid);
-      // console.log("Signup Response:", res.data);
-      // console.log(res);
-      navigate(`/managerdash`);
+      navigate(`/manager`);
     } catch (error) {
       console.error("Signup error:", error.response?.data?.message || error.message);
-      setErrorMessage(error.response?.data?.message || "Something went wrong. Please try again."); // 🔴 Set error message
+      setErrorMessage(error.response?.data?.message || "Something went wrong. Please try again."); 
     }
   };
 

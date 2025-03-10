@@ -23,7 +23,7 @@ const Landing = () => {
       const data = res.data;
       localStorage.setItem("authTokenManager", data.token);
       localStorage.setItem("uid", data.user.uid);
-      navigate("/managerdash");
+      navigate("/manager");
     } catch (error) {
       console.error("Login error:", error.response?.data?.message || error.message);
       setErrorMessage(
