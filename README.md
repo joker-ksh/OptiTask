@@ -47,4 +47,5 @@ Ensure you have the following installed:
    npm install
    npm run dev
    cd Backend
+   npm install
    nodemon server.js
