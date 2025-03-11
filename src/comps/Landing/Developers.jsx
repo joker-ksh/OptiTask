@@ -5,11 +5,13 @@ import axios from "axios";
 const Developers = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [errorMessage, setErrorMessage] = useState(""); // For error messages
+  const [isLoading, setIsLoading] = useState(false); // Loading state
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setErrorMessage(""); // Reset error message before login attempt
+    setIsLoading(true);
     try {
       const url = import.meta.env.VITE_SERVER_URL;
       const res = await axios.post(`${url}/developer/signin`, formData, {
@@ -25,6 +27,7 @@ const Developers = () => {
         error.response?.data?.message || "Something went wrong. Please try again."
       );
     }
+    setIsLoading(false);
   };
 
   const handleChange = (e) => {
@@ -72,9 +75,37 @@ const Developers = () => {
 
             <button
               type="submit"
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-md transition duration-200"
+              disabled={isLoading}
+              className={`relative w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-md transition duration-200 ${
+                isLoading ? "opacity-75 cursor-not-allowed" : ""
+              }`}
             >
-              Login
+              {/* The text "Login" remains to preserve button size */}
+              <span className={isLoading ? "invisible" : ""}>Login</span>
+              {isLoading && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <svg
+                    className="animate-spin h-5 w-5 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v8H4z"
+                    ></path>
+                  </svg>
+                </div>
+              )}
             </button>
           </form>
         </div>

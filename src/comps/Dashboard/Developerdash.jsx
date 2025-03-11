@@ -12,6 +12,8 @@ const Developerdash = () => {
   const [newMessage, setNewMessage] = useState("");
   // New state for task status update (read-only in UI if already Completed)
   const [taskStatus, setTaskStatus] = useState("In Progress");
+  // New state to track if the entire page is loading
+  const [isPageLoading, setIsPageLoading] = useState(true);
 
   // Fetch task data from the server and update state.
   useEffect(() => {
@@ -46,7 +48,9 @@ const Developerdash = () => {
 
         // Check if the logged-in developer's subtask status is Completed.
         const uidStored = localStorage.getItem("uid");
-        const myDev = developersFromResponse.find((member) => member.uid === uidStored);
+        const myDev = developersFromResponse.find(
+          (member) => member.uid === uidStored
+        );
         if (myDev && myDev.taskStatus === "Completed") {
           taskData.status = "Completed";
         }
@@ -63,6 +67,8 @@ const Developerdash = () => {
         });
       } catch (e) {
         console.error("Error fetching task data:", e);
+      } finally {
+        setIsPageLoading(false);
       }
     };
     fetchTask();
@@ -120,6 +126,15 @@ const Developerdash = () => {
     "No subtask assigned";
   const myName =
     teamMembers.find((member) => member.uid === myUid)?.name || "Developer";
+
+  // Display loading effect until the data is ready.
+  if (isPageLoading) {
+    return (
+      <div className="w-screen h-screen bg-gray-800 flex justify-center items-center">
+        <p className="text-white text-xl">Loading, please wait...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-800 p-6 flex flex-col gap-6">
@@ -217,7 +232,9 @@ const Developerdash = () => {
                   <li
                     key={index}
                     className={`p-3 rounded-md border ${
-                      member.uid ? "bg-gray-800 border-gray-700" : "bg-gray-700 border-gray-600"
+                      member.uid
+                        ? "bg-gray-800 border-gray-700"
+                        : "bg-gray-700 border-gray-600"
                     }`}
                   >
                     <p className="text-gray-200 font-bold">{member.name}</p>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { useSearchParams } from "react-router-dom";
+import { FiSend, FiTrash2, FiUserCheck, FiAlertCircle } from "react-icons/fi";
 
 const Task = () => {
   const [assignedTask, setAssignedTask] = useState(null);
@@ -147,124 +148,131 @@ const Task = () => {
       </div>
     );
   }
-  
+
   return (
-    <div className="w-full min-h-screen bg-gradient-to-br from-black to-gray-800 flex flex-col p-6">
-      {/* Navbar */}
-      <nav className="w-full bg-gray-900 text-white p-4 flex justify-between items-center rounded-lg shadow-lg">
-        <div className="flex flex-col">
-          <h1 className="text-3xl font-extrabold">
-            Task Name: {assignedTask ? assignedTask.title : "N/A"}
-          </h1>
-          <div className="mt-2">
-            <div
-              className={`px-4 py-2 rounded-md text-white font-bold ${
-                assignedTask && assignedTask.status === "Completed"
-                  ? "bg-green-500"
-                  : "bg-yellow-500"
-              }`}
-            >
-              {assignedTask && assignedTask.status ? assignedTask.status : "N/A"}
+    <div className="w-full min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex flex-col p-6 space-y-6">
+      {/* Task Header */}
+      <div className="bg-gradient-to-r from-purple-800 to-indigo-800 p-6 rounded-2xl shadow-2xl">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div className="flex-1">
+            <h1 className="text-3xl font-bold text-white mb-2">
+              {assignedTask?.title || "Task Details"}
+            </h1>
+            <div className="flex flex-wrap gap-3 items-center">
+              <span className={`px-4 py-2 rounded-full text-sm font-semibold ${
+                assignedTask?.status === "Completed" 
+                  ? "bg-green-500/20 text-green-400" 
+                  : "bg-yellow-500/20 text-yellow-400"
+              }`}>
+                {assignedTask?.status || "Loading..."}
+              </span>
+              <div className="flex items-center gap-2 text-purple-200">
+                <FiAlertCircle className="flex-shrink-0" />
+                <span>Deadline: {assignedTask?.deadline || "N/A"}</span>
+              </div>
             </div>
           </div>
-        </div>
-        <div className="flex items-center gap-4">
-          <span className="px-3 py-1 bg-yellow-500 text-white rounded-md">
-            Deadline: {assignedTask ? assignedTask.deadline : "N/A"}
-          </span>
           <button
             onClick={handleDeleteTask}
-            className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-md"
+            className="flex items-center gap-2 px-4 py-2 bg-red-500/90 hover:bg-red-600 text-white rounded-xl transition-all"
           >
+            <FiTrash2 className="text-lg" />
             Delete Task
           </button>
         </div>
-      </nav>
-  
-      <div className="flex flex-col md:flex-row gap-6 mt-6 h-[calc(100vh-140px)]">
-        {/* Developers Section */}
-        <div className="w-full md:w-1/2 bg-gray-900 p-6 rounded-lg shadow-lg border border-gray-700 flex flex-col">
-          <h2 className="text-xl font-semibold text-white mb-4">Assigned Developers</h2>
-          <div ref={devsContainerRef} className="flex-1 overflow-y-auto pr-2">
-            <ul className="space-y-4">
-              {filledMembers.map((dev, index) => {
-                const devStatus = dev.uid ? (dev.taskStatus || "In Progress") : null;
-                const bgColor = dev.uid
-                  ? devStatus === "Completed"
-                    ? "bg-green-600 border-green-700"
-                    : "bg-yellow-600 border-yellow-600"
-                  : "bg-gray-700 border-gray-600";
-                return (
-                  <li key={index} className={`p-4 rounded-md border ${bgColor} text-white`}>
-                    <div className="mb-2">
-                      <span className="font-bold text-lg">{dev.name}</span>
+      </div>
+
+      <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-180px)]">
+        {/* Team Section */}
+        <div className="w-full lg:w-1/3 bg-gray-800 p-6 rounded-2xl shadow-xl border border-gray-700 flex flex-col">
+          <h2 className="text-xl font-semibold text-white mb-6 flex items-center gap-2">
+            <FiUserCheck className="text-purple-400" />
+            Team Members
+          </h2>
+          <div ref={devsContainerRef} className="flex-1 overflow-y-auto pr-2 space-y-4">
+            {filledMembers.map((dev, index) => (
+              <div 
+                key={index}
+                className={`p-4 rounded-xl transition-all ${
+                  dev.uid ? "bg-gray-700 hover:bg-gray-600" : "bg-gray-800"
+                } border border-gray-600`}
+              >
+                <div className="flex items-start gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="font-bold text-white">{dev.name}</span>
                       {dev.techStack && (
-                        <span className="ml-2 text-sm text-gray-300">
-                          ({dev.techStack})
+                        <span className="text-xs text-purple-300 bg-purple-900 px-2 py-1 rounded-full">
+                          {dev.techStack}
                         </span>
                       )}
                     </div>
-                    <div className="mb-2">
-                      <span className="font-semibold">Subtask: </span>
-                      <span>{dev.subtask}</span>
-                    </div>
-                    {dev.uid && (
-                      <div>
-                        <span className="font-semibold">Status: </span>
-                        <span
-                          className={`px-2 py-1 rounded-md text-white text-sm ${
-                            devStatus === "Completed" ? "bg-green-500" : "bg-yellow-500"
-                          }`}
-                        >
-                          {devStatus}
-                        </span>
-                      </div>
+                    {dev.uid ? (
+                      <>
+                        <p className="text-sm text-gray-300 mb-2">
+                          <span className="font-semibold">Subtask:</span> {dev.subtask}
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <span className={`px-3 py-1 rounded-full text-xs ${
+                            dev.taskStatus === "Completed" 
+                              ? "bg-green-500/30 text-green-400" 
+                              : "bg-yellow-500/30 text-yellow-400"
+                          }`}>
+                            {dev.taskStatus || "In Progress"}
+                          </span>
+                        </div>
+                      </>
+                    ) : (
+                      <p className="text-gray-400 italic">Unassigned</p>
                     )}
-                  </li>
-                );
-              })}
-            </ul>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
-  
+
         {/* Chat Section */}
-        <div className="w-full md:w-1/2 bg-gray-900 p-6 rounded-lg shadow-lg border border-gray-700 flex flex-col">
-          <h2 className="text-xl font-semibold text-white mb-4">Task Discussion</h2>
-          <div ref={chatContainerRef} className="flex-1 bg-gray-800 p-4 rounded-lg overflow-y-auto">
-            {messages.length > 0 ? (
-              <div className="space-y-3">
-                {messages.map((msg, index) => (
-                  <div
-                    key={index}
-                    className={`p-2 rounded-md ${
-                      msg.sender === "System"
-                        ? "bg-gray-700 text-gray-400 italic"
-                        : "bg-gray-700 text-white"
-                    }`}
-                  >
-                    <div className="flex justify-between">
-                      <strong
-                        className={msg.sender === "System" ? "text-gray-400" : "text-indigo-400"}
-                      >
-                        {msg.sender}
-                      </strong>
-                      <span className="text-xs text-gray-500">
-                        {new Date(msg.timestamp).toLocaleTimeString()}
-                      </span>
-                    </div>
-                    <p className="mt-1">{msg.text}</p>
+        <div className="flex-1 bg-gray-800 p-6 rounded-2xl shadow-xl border border-gray-700 flex flex-col">
+          <h2 className="text-xl font-semibold text-white mb-6">Task Discussion</h2>
+          <div ref={chatContainerRef} className="flex-1 bg-gray-900 p-4 rounded-xl overflow-y-auto space-y-4">
+            {messages.map((msg, index) => (
+              <div 
+                key={index}
+                className={`flex ${msg.sender === currentSender ? "justify-end" : "justify-start"}`}
+              >
+                <div className={`max-w-[80%] p-4 rounded-2xl ${
+                  msg.sender === "System" 
+                    ? "bg-gray-700 text-gray-300" 
+                    : msg.sender === currentSender 
+                      ? "bg-purple-600 text-white" 
+                      : "bg-gray-700 text-white"
+                }`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className={`text-sm font-semibold ${
+                      msg.sender === "System" ? "text-gray-400" : "text-purple-200"
+                    }`}>
+                      {msg.sender}
+                    </span>
+                    <span className="text-xs text-gray-400 ml-2">
+                      {new Date(msg.timestamp).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </span>
                   </div>
-                ))}
-                <div ref={messagesEndRef} />
+                  <p className="text-sm leading-relaxed">{msg.text}</p>
+                </div>
               </div>
-            ) : (
-              <p className="text-gray-400">No messages yet...</p>
-            )}
+            ))}
+            <div ref={messagesEndRef} />
           </div>
-          <div className="mt-4 flex">
+          
+          {/* Message Input */}
+          <div className="mt-6 flex gap-4">
             <textarea
               placeholder="Type your message..."
-              className="flex-1 px-4 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+              className="flex-1 px-4 py-3 bg-gray-900 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none transition-all"
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               onKeyPress={handleKeyPress}
@@ -272,8 +280,9 @@ const Task = () => {
             />
             <button
               onClick={sendMessage}
-              className="ml-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md transition duration-200"
+              className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl flex items-center gap-2 transition-all"
             >
+              <FiSend className="text-lg" />
               Send
             </button>
           </div>
