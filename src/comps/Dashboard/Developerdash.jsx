@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 
 const Developerdash = () => {
   const [assignedTask, setAssignedTask] = useState(null);
@@ -10,9 +9,7 @@ const Developerdash = () => {
     { id: 2, sender: "Charlie", content: "Please check your tasks." },
   ]);
   const [newMessage, setNewMessage] = useState("");
-  // New state for task status update (read-only in UI if already Completed)
   const [taskStatus, setTaskStatus] = useState("In Progress");
-  // New state to track if the entire page is loading
   const [isPageLoading, setIsPageLoading] = useState(true);
 
   // Fetch task data from the server and update state.
@@ -21,32 +18,36 @@ const Developerdash = () => {
       try {
         const uid = localStorage.getItem("uid");
         const token = localStorage.getItem("authTokenDeveloper");
-        const res = await axios.post(
+        const res = await fetch(
           import.meta.env.VITE_SERVER_URL + "/developer/myTask",
-          { uid },
-          { headers: { Authorization: `Bearer ${token}` } }
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ uid }),
+          }
         );
-        console.log(res.data);
+        const data = await res.json();
+        console.log(data);
 
-        if (!res.data || !res.data.id) {
+        if (!data || !data.id) {
           setAssignedTask(null);
           return;
         }
 
-        // Map JSON fields to our state.
         const taskData = {
-          id: res.data.id,
-          title: res.data.task,
-          status: res.data.status || "In Progress",
-          deadline: res.data.deadline,
-          taskLink: res.data.pdf,
+          id: data.id,
+          title: data.task,
+          status: data.status || "In Progress",
+          deadline: data.deadline,
+          taskLink: data.pdf,
         };
 
-        // Set team members from the assignedDevelopers array.
-        const developersFromResponse = res.data.assignedDevelopers || [];
+        const developersFromResponse = data.assignedDevelopers || [];
         setTeamMembers(developersFromResponse);
 
-        // Check if the logged-in developer's subtask status is Completed.
         const uidStored = localStorage.getItem("uid");
         const myDev = developersFromResponse.find(
           (member) => member.uid === uidStored
@@ -55,15 +56,13 @@ const Developerdash = () => {
           taskData.status = "Completed";
         }
 
-        // Set task and update local taskStatus state.
         setAssignedTask(taskData);
         setTaskStatus(taskData.status);
 
-        // Set manager details.
         setManager({
-          id: res.data.managerId,
-          name: res.data.managerName,
-          email: res.data.managerEmail,
+          id: data.managerId,
+          name: data.managerName,
+          email: data.managerEmail,
         });
       } catch (e) {
         console.error("Error fetching task data:", e);
@@ -86,21 +85,24 @@ const Developerdash = () => {
     }
   };
 
-  // Function to update task status on the backend.
-  // This control is only visible if task status is not Completed.
   const handleUpdateStatus = async () => {
     if (!assignedTask) return;
     try {
       const token = localStorage.getItem("authTokenDeveloper");
       const uid = localStorage.getItem("uid");
       console.log(uid, token, assignedTask.id, taskStatus);
-      await axios.post(
+      const response = await fetch(
         import.meta.env.VITE_SERVER_URL + "/developer/updateTask",
-        { taskId: assignedTask.id, status: taskStatus, uid: uid },
-        { headers: { Authorization: `Bearer ${token}` } }
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ taskId: assignedTask.id, status: taskStatus, uid: uid }),
+        }
       );
       alert("Task status updated successfully");
-      // Update local task status.
       setAssignedTask({ ...assignedTask, status: taskStatus });
     } catch (error) {
       console.error("Error updating task status:", error);
@@ -108,7 +110,6 @@ const Developerdash = () => {
     }
   };
 
-  // Fill in vacant team member slots so that there are always 4 items.
   const filledMembers = [
     ...teamMembers,
     ...Array(4 - teamMembers.length).fill({
@@ -119,7 +120,6 @@ const Developerdash = () => {
     }),
   ];
 
-  // Get the logged-in developer's subtask and name.
   const myUid = localStorage.getItem("uid");
   const mySubtask =
     teamMembers.find((member) => member.uid === myUid)?.subtask ||
@@ -127,155 +127,217 @@ const Developerdash = () => {
   const myName =
     teamMembers.find((member) => member.uid === myUid)?.name || "Developer";
 
-  // Display loading effect until the data is ready.
   if (isPageLoading) {
     return (
-      <div className="w-screen h-screen bg-gray-800 flex justify-center items-center">
-        <p className="text-white text-xl">Loading, please wait...</p>
+      <div className="min-h-screen bg-slate-900 flex justify-center items-center">
+        <div className="bg-white/10 backdrop-blur-md rounded-xl p-8 border border-white/20">
+          <div className="flex items-center space-x-4">
+            <div className="animate-spin rounded-full h-8 w-8 border-2 border-white border-t-transparent"></div>
+            <p className="text-white text-xl font-medium">Loading your dashboard...</p>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-800 p-6 flex flex-col gap-6">
+    <div className="min-h-screen bg-slate-900">
       {/* Navigation Bar */}
-      <nav className="w-full bg-indigo-900 text-white p-4 flex justify-between items-center rounded-lg shadow-lg">
-        <h1 className="text-lg font-semibold">Developer Dashboard</h1>
-        <button className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition duration-200">
-          Logout
-        </button>
+      <nav className="backdrop-blur-md bg-white/10 border-b border-white/20 text-white p-6">
+        <div className="max-w-7xl mx-auto flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+              Welcome, {myName}!
+            </h1>
+            <p className="text-gray-300 text-sm mt-1">Developer Dashboard</p>
+          </div>
+          <button className="px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg">
+            Logout
+          </button>
+        </div>
       </nav>
 
-      {/* Developer Welcome Banner */}
-      <div className="w-full bg-gray-700 text-white p-4 rounded-lg shadow-lg mb-6">
-        <h2 className="text-2xl font-bold">Welcome, {myName}!</h2>
-      </div>
-
-      <div className="flex flex-col md:flex-row gap-6 items-stretch">
-        {!assignedTask ? (
-          <div className="w-full md:w-1/2 flex justify-center items-center">
-            <p className="text-gray-400 text-lg font-semibold">No task assigned</p>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-6 w-full md:w-1/2">
-            <div className="bg-gray-900 p-6 rounded-lg shadow-lg border border-gray-700 flex flex-col">
-              <h2 className="text-xl font-semibold text-white mb-3">Assigned Task</h2>
-              <h3 className="text-4xl font-bold text-green-500">{assignedTask.title}</h3>
-              <p className="text-white mt-2 font-bold">
-                <span className="text-indigo-500 text-xl">Your Subtask: </span> {mySubtask}
-              </p>
-              {assignedTask.taskLink && (
-                <a
-                  href={assignedTask.taskLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-indigo-400 underline mt-2 block"
-                >
-                  Task Link
-                </a>
-              )}
-              <p className="mt-2 text-gray-400">
-                Sub Task Status:{" "}
-                <span
-                  className={`font-bold ${
+      <div className="max-w-7xl mx-auto p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Assigned Task Section */}
+          <div className="space-y-6">
+            {!assignedTask ? (
+              <div className="backdrop-blur-md bg-white/10 rounded-2xl border border-white/20 p-12 text-center">
+                <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center">
+                  <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                  </svg>
+                </div>
+                <h3 className="text-xl font-semibold text-white mb-2">No Task Assigned</h3>
+                <p className="text-gray-300">You don't have any active tasks at the moment.</p>
+              </div>
+            ) : (
+              <div className="backdrop-blur-md bg-white/10 rounded-2xl border border-white/20 p-8 shadow-xl">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-white flex items-center">
+                    <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg mr-3 flex items-center justify-center">
+                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                      </svg>
+                    </div>
+                    Assigned Task
+                  </h2>
+                  <div className={`px-4 py-2 rounded-full text-sm font-semibold ${
                     assignedTask.status === "Completed"
-                      ? "text-green-500"
+                      ? "bg-green-500/20 text-green-400 border border-green-500/30"
                       : assignedTask.status === "In Progress"
-                      ? "text-yellow-500"
-                      : "text-red-500"
-                  }`}
-                >
-                  {assignedTask.status}
-                </span>
-              </p>
-              {assignedTask.deadline && (
-                <p className="text-gray-300 mt-2">Deadline: {assignedTask.deadline}</p>
-              )}
-              {/* Only show the update input if the task is not Completed */}
-              {assignedTask.status !== "Completed" && (
-                <div className="mt-4">
-                  <label className="text-white font-semibold">Update SubTask Status:</label>
-                  <select
-                    value={taskStatus}
-                    onChange={(e) => setTaskStatus(e.target.value)}
-                    className="ml-2 p-2 bg-gray-800 text-white border border-gray-700 rounded-md"
-                  >
-                    <option value="In Progress">In Progress</option>
-                    <option value="Completed">Completed</option>
-                  </select>
-                  <button
-                    onClick={handleUpdateStatus}
-                    className="ml-4 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md transition duration-200"
-                  >
-                    Update
-                  </button>
+                      ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
+                      : "bg-red-500/20 text-red-400 border border-red-500/30"
+                  }`}>
+                    {assignedTask.status}
+                  </div>
+                </div>
+                
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-3xl font-bold bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent mb-3">
+                      {assignedTask.title}
+                    </h3>
+                    <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                      <p className="text-gray-300 text-sm mb-2">Your Subtask</p>
+                      <p className="text-white font-semibold text-lg">{mySubtask}</p>
+                    </div>
+                  </div>
+
+                  {assignedTask.taskLink && (
+                    <a
+                      href={assignedTask.taskLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl hover:from-blue-600 hover:to-purple-600 transition-all duration-300 transform hover:scale-105"
+                    >
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                      </svg>
+                      View Task Details
+                    </a>
+                  )}
+
+                  {assignedTask.deadline && (
+                    <div className="flex items-center text-gray-300">
+                      <svg className="w-5 h-5 mr-2 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                      </svg>
+                      Deadline: {assignedTask.deadline}
+                    </div>
+                  )}
+
+                  {assignedTask.status !== "Completed" && (
+                    <div className="bg-white/5 rounded-xl p-6 border border-white/10">
+                      <h4 className="text-white font-semibold mb-4">Update Task Status</h4>
+                      <div className="flex items-center space-x-4">
+                        <select
+                          value={taskStatus}
+                          onChange={(e) => setTaskStatus(e.target.value)}
+                          className="flex-1 p-3 bg-white/10 text-black border border-white/20 rounded-xl focus:border-purple-500 focus:outline-none backdrop-blur-md"
+                        >
+                          <option value="In Progress" className="text-black bg-white">In Progress</option>
+                          <option value="Completed" className="text-black bg-white">Completed</option>
+                        </select>
+                        <button
+                          onClick={handleUpdateStatus}
+                          className="px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-xl transition-all duration-300 transform hover:scale-105"
+                        >
+                          Update
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Manager Details */}
+            <div className="backdrop-blur-md bg-white/10 rounded-2xl border border-white/20 p-6">
+              <h3 className="text-xl font-bold text-white mb-4 flex items-center">
+                <div className="w-6 h-6 bg-gradient-to-r from-indigo-500 to-purple-500 rounded mr-3 flex items-center justify-center">
+                  <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                  </svg>
+                </div>
+                Manager Details
+              </h3>
+              {manager ? (
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-sm text-gray-400 mb-1">Manager Name</p>
+                    <p className="text-lg font-semibold text-white">{manager.name}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-400 mb-1">Email</p>
+                    <p className="text-gray-300">{manager.email}</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="animate-pulse">
+                  <div className="h-4 bg-white/10 rounded mb-2"></div>
+                  <div className="h-4 bg-white/10 rounded w-3/4"></div>
                 </div>
               )}
-              <div className="bg-gray-800 p-4 rounded-md mt-4 border border-gray-600">
-                <h2 className="text-lg font-semibold text-white">Manager Details</h2>
-                {manager ? (
-                  <p className="text-gray-300">
-                    <span className="font-bold text-indigo-400">{manager.name}</span>
-                    <br />
-                    <span className="text-sm text-gray-400">{manager.email}</span>
-                  </p>
-                ) : (
-                  <p className="text-gray-300">Loading manager details...</p>
-                )}
-              </div>
             </div>
+          </div>
 
-            <div className="bg-gray-900 p-6 rounded-lg shadow-lg border border-gray-700">
-              <h2 className="text-xl font-semibold text-white mb-3">Team Members</h2>
-              <ul className="space-y-3">
-                {filledMembers.map((member, index) => (
-                  <li
-                    key={index}
-                    className={`p-3 rounded-md border ${
-                      member.uid
-                        ? "bg-gray-800 border-gray-700"
-                        : "bg-gray-700 border-gray-600"
-                    }`}
-                  >
-                    <p className="text-gray-200 font-bold">{member.name}</p>
-                    <p className="text-gray-400 text-sm">{member.email}</p>
-                    {member.subtask && (
-                      <p className="text-yellow-500 text-sm mt-1">{member.subtask}</p>
+          {/* Team Members Section */}
+          <div className="backdrop-blur-md bg-white/10 rounded-2xl border border-white/20 p-8 shadow-xl">
+            <h2 className="text-2xl font-bold text-white mb-6 flex items-center">
+              <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg mr-3 flex items-center justify-center">
+                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                </svg>
+              </div>
+              Team Members
+            </h2>
+            
+            <div className="space-y-4">
+              {filledMembers.map((member, index) => (
+                <div
+                  key={index}
+                  className={`p-6 rounded-xl border transition-all duration-300 ${
+                    member.uid
+                      ? "bg-white/5 border-white/10"
+                      : "bg-gray-500/10 border-gray-500/20 opacity-60"
+                  }`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                        member.uid
+                          ? "bg-gradient-to-r from-blue-500 to-purple-500"
+                          : "bg-gray-500"
+                      }`}>
+                        <span className="text-white font-semibold text-sm">
+                          {member.name.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <div>
+                        <h4 className={`font-semibold ${
+                          member.uid ? "text-white" : "text-gray-400"
+                        }`}>
+                          {member.name}
+                        </h4>
+                        <p className="text-gray-400 text-sm">{member.email}</p>
+                      </div>
+                    </div>
+                    {member.uid && member.uid === myUid && (
+                      <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full border border-green-500/30">
+                        You
+                      </span>
                     )}
-                  </li>
-                ))}
-              </ul>
+                  </div>
+                  {member.subtask && (
+                    <div className="mt-3 p-3 bg-white/5 rounded-lg border border-white/5">
+                      <p className="text-xs text-gray-400 mb-1">Assigned Subtask</p>
+                      <p className="text-yellow-400 text-sm font-medium">{member.subtask}</p>
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
-          </div>
-        )}
-
-        {/* Group Chat Container */}
-        <div className="bg-gray-900 p-6 rounded-lg shadow-lg w-full md:w-1/2 border border-gray-700 flex flex-col">
-          <h2 className="text-xl font-semibold text-white mb-4">Group Chat</h2>
-          <div className="flex-1 overflow-y-auto space-y-3 pr-2">
-            {messages.map((msg) => (
-              <div key={msg.id} className="bg-gray-800 p-3 rounded-md">
-                <p className="text-gray-400 text-sm">
-                  <strong>{msg.sender}:</strong>
-                </p>
-                <p className="text-gray-300">{msg.content}</p>
-              </div>
-            ))}
-          </div>
-          <div className="mt-4 flex">
-            <input
-              type="text"
-              placeholder="Type your message..."
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              className="flex-1 px-4 py-2 bg-gray-800 border border-gray-700 rounded-l-md text-white focus:outline-none"
-            />
-            <button
-              onClick={handleSendMessage}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-r-md transition duration-200"
-            >
-              Send
-            </button>
           </div>
         </div>
       </div>
