@@ -142,29 +142,42 @@ const Task = () => {
 
   if (isDeleted) {
     return (
-      <div className="w-full min-h-screen bg-gradient-to-br from-black to-gray-800 flex items-center justify-center">
-        <p className="text-3xl text-red-500 font-bold">Task has been deleted.</p>
+      <div className="w-full min-h-screen bg-gradient-to-br from-black via-red-950 to-gray-900 flex items-center justify-center">
+        <div className="relative p-8">
+          <div className="absolute inset-0 bg-red-500/10 backdrop-blur-sm border border-red-500/30 transform rotate-1"></div>
+          <div className="relative bg-gray-900/90 border-2 border-red-500 p-8 clip-path-polygon">
+            <p className="text-3xl text-red-400 font-bold tracking-wide">TASK DELETED</p>
+            <div className="mt-2 h-1 bg-gradient-to-r from-red-500 to-transparent"></div>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="w-full min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex flex-col p-6 space-y-6">
-      {/* Task Header */}
-      <div className="bg-gradient-to-r from-purple-800 to-indigo-800 p-6 rounded-2xl shadow-2xl">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div className="w-full min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 flex flex-col p-6 space-y-8">
+      {/* Task Header with Edgy Design */}
+      <div className="relative bg-gradient-to-r from-purple-800 to-indigo-800 p-8 rounded-xl border-2 border-gray-700 shadow-2xl overflow-hidden">
+        {/* Geometric background pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-0 left-0 w-32 h-32 bg-purple-400 transform rotate-45 -translate-x-16 -translate-y-16"></div>
+          <div className="absolute bottom-0 right-0 w-24 h-24 bg-indigo-400 transform rotate-12 translate-x-12 translate-y-12"></div>
+        </div>
+        
+        {/* Top accent line */}
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-400 to-indigo-400"></div>
+        
+        <div className="relative flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div className="flex-1">
             <h1 className="text-3xl font-bold text-white mb-2">
               {assignedTask?.title || "Task Details"}
             </h1>
             <div className="flex flex-wrap gap-3 items-center">
-              <span
-                className={`px-4 py-2 rounded-full text-sm font-semibold ${
-                  assignedTask?.status === "Completed"
-                    ? "bg-green-500/20 text-green-400"
-                    : "bg-yellow-500/20 text-yellow-400"
-                }`}
-              >
+              <span className={`px-4 py-2 rounded-full text-sm font-semibold ${
+                assignedTask?.status === "Completed"
+                  ? "bg-green-500/20 text-green-400"
+                  : "bg-yellow-500/20 text-yellow-400"
+              }`}>
                 {assignedTask?.status || "Loading..."}
               </span>
               <div className="flex items-center gap-2 text-purple-200">
@@ -181,46 +194,65 @@ const Task = () => {
             Delete Task
           </button>
         </div>
+        
+        {/* Bottom accent line */}
+        <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-purple-400 to-indigo-400"></div>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-180px)]">
-        {/* Team Section */}
-        <div className="w-full lg:w-1/3 bg-gray-800 p-6 rounded-2xl shadow-xl border border-gray-700 flex flex-col">
-          <h2 className="text-xl font-semibold text-white mb-6 flex items-center gap-2">
-            <FiUserCheck className="text-purple-400" />
-            Team Members
-          </h2>
-          <div ref={devsContainerRef} className="flex-1 overflow-y-auto pr-2 space-y-4">
-            {filledMembers.map((dev, index) => (
-              <div
-                key={index}
-                className={`p-4 rounded-xl transition-all ${
-                  dev.uid ? "bg-gray-700 hover:bg-gray-600" : "bg-gray-800"
-                } border border-gray-600`}
-              >
-                <div className="flex items-start gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
+      {/* Centered Team Section with Edgy Design */}
+      <div className="flex-1 flex justify-center items-start">
+        <div className="w-full max-w-4xl bg-gray-800 rounded-2xl border border-gray-700 shadow-2xl relative overflow-hidden">
+          {/* Corner accents */}
+          <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-purple-400 rounded-tl-lg"></div>
+          <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-purple-400 rounded-tr-lg"></div>
+          <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-purple-400 rounded-bl-lg"></div>
+          <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-purple-400 rounded-br-lg"></div>
+          
+          {/* Header */}
+          <div className="bg-gradient-to-r from-gray-900 to-purple-800 p-6 border-b border-gray-700 rounded-t-2xl">
+            <h2 className="text-xl font-semibold text-white mb-6 flex items-center gap-2">
+              <FiUserCheck className="text-purple-400" />
+              Team Members
+            </h2>
+            <div className="mt-3 h-1 bg-gradient-to-r from-transparent via-purple-400 to-transparent mx-auto w-48 rounded-full"></div>
+          </div>
+          
+          {/* Team Members Grid */}
+          <div className="p-8">
+            <div ref={devsContainerRef} className="grid grid-cols-1 md:grid-cols-2 gap-6 max-h-96 overflow-y-auto">
+              {filledMembers.map((dev, index) => (
+                <div
+                  key={index}
+                  className={`relative p-6 transition-all duration-300 rounded-xl ${
+                    dev.uid 
+                      ? "bg-gray-700 hover:bg-gray-600 border border-gray-600 hover:border-gray-500" 
+                      : "bg-gray-800 border border-gray-700"
+                  } group`}
+                >
+
+                  
+                  <div className="flex flex-col space-y-3">
+                    <div className="flex items-center gap-3">
                       <span className="font-bold text-white">{dev.name}</span>
-                      {dev.techStack && (
-                        <span className="text-xs text-purple-300 bg-purple-900 px-2 py-1 rounded-full">
-                          {dev.techStack}
-                        </span>
-                      )}
                     </div>
+                    
+                    {dev.techStack && (
+                      <span className="text-xs text-purple-300 bg-purple-900 px-2 py-1 rounded-full">
+                        {dev.techStack}
+                      </span>
+                    )}
+                    
                     {dev.uid ? (
                       <>
                         <p className="text-sm text-gray-300 mb-2">
                           <span className="font-semibold">Subtask:</span> {dev.subtask}
                         </p>
                         <div className="flex items-center gap-2">
-                          <span
-                            className={`px-3 py-1 rounded-full text-xs ${
-                              dev.taskStatus === "Completed"
-                                ? "bg-green-500/30 text-green-400"
-                                : "bg-yellow-500/30 text-yellow-400"
-                            }`}
-                          >
+                          <span className={`px-3 py-1 rounded-full text-xs ${
+                            dev.taskStatus === "Completed"
+                              ? "bg-green-500/30 text-green-400"
+                              : "bg-yellow-500/30 text-yellow-400"
+                          }`}>
                             {dev.taskStatus || "In Progress"}
                           </span>
                         </div>
@@ -229,70 +261,19 @@ const Task = () => {
                       <p className="text-gray-400 italic">Unassigned</p>
                     )}
                   </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Chat Section */}
-        <div className="flex-1 bg-gray-800 p-6 rounded-2xl shadow-xl border border-gray-700 flex flex-col">
-          <h2 className="text-xl font-semibold text-white mb-6">Task Discussion</h2>
-          <div ref={chatContainerRef} className="flex-1 bg-gray-900 p-4 rounded-xl overflow-y-auto space-y-4">
-            {messages.map((msg, index) => (
-              <div
-                key={index}
-                className={`flex ${msg.sender === currentSender ? "justify-end" : "justify-start"}`}
-              >
-                <div
-                  className={`max-w-[80%] p-4 rounded-2xl ${
-                    msg.sender === "System"
-                      ? "bg-gray-700 text-gray-300"
-                      : msg.sender === currentSender
-                      ? "bg-purple-600 text-white"
-                      : "bg-gray-700 text-white"
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span
-                      className={`text-sm font-semibold ${
-                        msg.sender === "System" ? "text-gray-400" : "text-purple-200"
-                      }`}
-                    >
-                      {msg.sender}
-                    </span>
-                    <span className="text-xs text-gray-400 ml-2">
-                      {new Date(msg.timestamp).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </span>
+                  
+                  {/* Hover effect lines */}
+                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none rounded-xl">
+                    <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-purple-400 to-transparent rounded-t-xl"></div>
+                    <div className="absolute bottom-0 right-0 w-full h-0.5 bg-gradient-to-l from-purple-400 to-transparent rounded-b-xl"></div>
                   </div>
-                  <p className="text-sm leading-relaxed">{msg.text}</p>
                 </div>
-              </div>
-            ))}
-            <div ref={messagesEndRef} />
+              ))}
+            </div>
           </div>
-
-          {/* Message Input */}
-          <div className="mt-6 flex gap-4">
-            <textarea
-              placeholder="Type your message..."
-              className="flex-1 px-4 py-3 bg-gray-900 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none transition-all"
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
-              rows="2"
-            />
-            <button
-              onClick={sendMessage}
-              className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl flex items-center gap-2 transition-all"
-            >
-              <FiSend className="text-lg" />
-              Send
-            </button>
-          </div>
+          
+          {/* Bottom accent */}
+          <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-32 h-1 bg-purple-400 rounded-full"></div>
         </div>
       </div>
     </div>
