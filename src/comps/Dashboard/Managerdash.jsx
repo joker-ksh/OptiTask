@@ -17,7 +17,7 @@ const Managerdash = () => {
 
   useEffect(() => {
     fetchTasks();
-  }, []);
+  });
 
   const fetchTasks = async () => {
     try {
@@ -25,7 +25,7 @@ const Managerdash = () => {
       const token = localStorage.getItem("authTokenManager");
       const response = await axios.post(
         import.meta.env.VITE_SERVER_URL + "/manager/getTasks",
-        { uid },
+        { uid : uid },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       console.log("Fetched Tasks:", response.data);
@@ -111,6 +111,8 @@ const Managerdash = () => {
       }
 
       fetchTasks();
+      alert("Developer Added");
+      navigate('/manager')
     } catch (error) {
       console.error("Error creating task:", error.response?.data || error.message);
       setNoTeamAvailable(true);

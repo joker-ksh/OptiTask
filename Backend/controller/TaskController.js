@@ -18,7 +18,7 @@ const createTask = async (req, res) => {
     
     // New Step 1.1: Extract tech stack using Gemini API from the task description
     const genAIForTech = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const techModel = genAIForTech.getGenerativeModel({ model: "gemini-2.0-flash" });
+    const techModel = genAIForTech.getGenerativeModel({ model: "gemini-2.5-flash" });
     const techstackPrompt = `
       Extract the tech stack from the following task description:
       ${description}
@@ -90,7 +90,7 @@ const createTask = async (req, res) => {
 
     // Step 3: Prepare request for Gemini API for developer assignment
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
     
     // Updated Gemini prompt includes the tech stack from the first response
     const geminiPrompt = `
@@ -327,6 +327,7 @@ const createTask = async (req, res) => {
   
 
 const getmanagersTasks = async (req,res) => {
+    console.log("IN GET MANAGERS TASK ROUTE")
     const { uid } = req.body;
     try{
         const managerRef = doc(db, "managers", uid);

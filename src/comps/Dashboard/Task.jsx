@@ -21,72 +21,68 @@ const Task = () => {
   ]);
   const [newMessage, setNewMessage] = useState("");
   const currentSender = "Manager";
-  
-  // Local state for task progress (we set to 100 if completed, else 50)
+
   const [taskProgress, setTaskProgress] = useState(50);
-  // New state for deletion flag
   const [isDeleted, setIsDeleted] = useState(false);
-  
+
   const messagesEndRef = useRef(null);
   const chatContainerRef = useRef(null);
   const devsContainerRef = useRef(null);
-  
+
   const [searchParams] = useSearchParams();
   const taskId = searchParams.get("taskId");
-  
-  // Auto-scroll to bottom when new messages are added.
+
+  // Auto-scroll on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
-  
-  // Fetch task data using the taskId from the URL.
-  useEffect(() => {
-    const fetchTask = async () => {
-      try {
-        console.log("Task ID:", taskId);
-        const res = await axios.post(
-          `${import.meta.env.VITE_SERVER_URL}/manager/getTask`,
-          { taskId }
-        );
-        console.log("Task Response:", res.data);
-  
-        if (!res.data || !res.data.id) {
-          setAssignedTask(null);
-          return;
-        }
-  
-        // Determine overall task status based on assigned developers.
-        const developersFromResponse = res.data.assignedDevelopers || [];
-        const allCompleted =
-          developersFromResponse.length > 0 &&
-          developersFromResponse.every(
-            (dev) => (dev.taskStatus || "In Progress") === "Completed"
-          );
-        const overallStatus = allCompleted ? "Completed" : "In Progress";
-  
-        const taskData = {
-          id: res.data.id,
-          title: res.data.task,
-          status: res.data.taskStatus || overallStatus,
-          deadline: res.data.deadline,
-          taskLink: res.data.pdf,
-          text: res.data.text,
-          createdBy: res.data.createdBy,
-          createdAt: res.data.createdAt,
-        };
-  
-        setAssignedTask(taskData);
-        setTaskProgress(overallStatus === "Completed" ? 100 : 50);
-        setTeamMembers(developersFromResponse);
-      } catch (e) {
-        console.error("Error fetching task data:", e);
+
+  // Function to fetch task data
+  const fetchTask = async () => {
+    if (!taskId) return;
+    try {
+      const res = await axios.post(
+        `${import.meta.env.VITE_SERVER_URL}/manager/getTask`,
+        { taskId }
+      );
+
+      if (!res.data || !res.data.id) {
+        setAssignedTask(null);
+        return;
       }
-    };
-    if (taskId) {
-      fetchTask();
+
+      const developersFromResponse = res.data.assignedDevelopers || [];
+      const allCompleted =
+        developersFromResponse.length > 0 &&
+        developersFromResponse.every(
+          (dev) => (dev.taskStatus || "In Progress") === "Completed"
+        );
+      const overallStatus = allCompleted ? "Completed" : "In Progress";
+
+      const taskData = {
+        id: res.data.id,
+        title: res.data.task,
+        status: res.data.taskStatus || overallStatus,
+        deadline: res.data.deadline,
+        taskLink: res.data.pdf,
+        text: res.data.text,
+        createdBy: res.data.createdBy,
+        createdAt: res.data.createdAt,
+      };
+
+      setAssignedTask(taskData);
+      setTaskProgress(overallStatus === "Completed" ? 100 : 50);
+      setTeamMembers(developersFromResponse);
+    } catch (e) {
+      console.error("Error fetching task data:", e);
     }
+  };
+
+  // Fetch task on component mount
+  useEffect(() => {
+    fetchTask();
   }, [taskId]);
-  
+
   const sendMessage = () => {
     if (newMessage.trim()) {
       const newMsg = {
@@ -98,16 +94,17 @@ const Task = () => {
       setNewMessage("");
     }
   };
-  
+
   const handleKeyPress = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
     }
   };
-  
-  // Delete task without auth header.
+
+  // Delete task
   const handleDeleteTask = async () => {
+    if (!assignedTask) return;
     if (window.confirm("Are you sure you want to delete this task?")) {
       try {
         await axios.post(
@@ -115,7 +112,6 @@ const Task = () => {
           { taskId: assignedTask.id }
         );
         alert("Task deleted successfully");
-        // Set deletion flag to true so that UI shows deletion message.
         setIsDeleted(true);
       } catch (error) {
         console.error("Error deleting task:", error);
@@ -123,8 +119,13 @@ const Task = () => {
       }
     }
   };
-  
-  // Ensure there are always 4 team members.
+
+  // Refresh task data (after creation or updates)
+  const refreshTask = async () => {
+    await fetchTask();
+  };
+
+  // Ensure 4 team members
   const filledMembers = [
     ...teamMembers,
     ...Array(Math.max(0, 4 - teamMembers.length)).fill({
@@ -134,13 +135,11 @@ const Task = () => {
       subtask: "",
     }),
   ];
-  
-  // Get the logged-in developer's subtask.
+
   const myUid = localStorage.getItem("uid");
   const mySubtask =
     teamMembers.find((member) => member.uid === myUid)?.subtask || "No subtask assigned";
-  
-  // If task has been deleted, show a centered message.
+
   if (isDeleted) {
     return (
       <div className="w-full min-h-screen bg-gradient-to-br from-black to-gray-800 flex items-center justify-center">
@@ -159,11 +158,13 @@ const Task = () => {
               {assignedTask?.title || "Task Details"}
             </h1>
             <div className="flex flex-wrap gap-3 items-center">
-              <span className={`px-4 py-2 rounded-full text-sm font-semibold ${
-                assignedTask?.status === "Completed" 
-                  ? "bg-green-500/20 text-green-400" 
-                  : "bg-yellow-500/20 text-yellow-400"
-              }`}>
+              <span
+                className={`px-4 py-2 rounded-full text-sm font-semibold ${
+                  assignedTask?.status === "Completed"
+                    ? "bg-green-500/20 text-green-400"
+                    : "bg-yellow-500/20 text-yellow-400"
+                }`}
+              >
                 {assignedTask?.status || "Loading..."}
               </span>
               <div className="flex items-center gap-2 text-purple-200">
@@ -191,7 +192,7 @@ const Task = () => {
           </h2>
           <div ref={devsContainerRef} className="flex-1 overflow-y-auto pr-2 space-y-4">
             {filledMembers.map((dev, index) => (
-              <div 
+              <div
                 key={index}
                 className={`p-4 rounded-xl transition-all ${
                   dev.uid ? "bg-gray-700 hover:bg-gray-600" : "bg-gray-800"
@@ -213,11 +214,13 @@ const Task = () => {
                           <span className="font-semibold">Subtask:</span> {dev.subtask}
                         </p>
                         <div className="flex items-center gap-2">
-                          <span className={`px-3 py-1 rounded-full text-xs ${
-                            dev.taskStatus === "Completed" 
-                              ? "bg-green-500/30 text-green-400" 
-                              : "bg-yellow-500/30 text-yellow-400"
-                          }`}>
+                          <span
+                            className={`px-3 py-1 rounded-full text-xs ${
+                              dev.taskStatus === "Completed"
+                                ? "bg-green-500/30 text-green-400"
+                                : "bg-yellow-500/30 text-yellow-400"
+                            }`}
+                          >
                             {dev.taskStatus || "In Progress"}
                           </span>
                         </div>
@@ -237,27 +240,31 @@ const Task = () => {
           <h2 className="text-xl font-semibold text-white mb-6">Task Discussion</h2>
           <div ref={chatContainerRef} className="flex-1 bg-gray-900 p-4 rounded-xl overflow-y-auto space-y-4">
             {messages.map((msg, index) => (
-              <div 
+              <div
                 key={index}
                 className={`flex ${msg.sender === currentSender ? "justify-end" : "justify-start"}`}
               >
-                <div className={`max-w-[80%] p-4 rounded-2xl ${
-                  msg.sender === "System" 
-                    ? "bg-gray-700 text-gray-300" 
-                    : msg.sender === currentSender 
-                      ? "bg-purple-600 text-white" 
+                <div
+                  className={`max-w-[80%] p-4 rounded-2xl ${
+                    msg.sender === "System"
+                      ? "bg-gray-700 text-gray-300"
+                      : msg.sender === currentSender
+                      ? "bg-purple-600 text-white"
                       : "bg-gray-700 text-white"
-                }`}>
+                  }`}
+                >
                   <div className="flex items-center justify-between mb-2">
-                    <span className={`text-sm font-semibold ${
-                      msg.sender === "System" ? "text-gray-400" : "text-purple-200"
-                    }`}>
+                    <span
+                      className={`text-sm font-semibold ${
+                        msg.sender === "System" ? "text-gray-400" : "text-purple-200"
+                      }`}
+                    >
                       {msg.sender}
                     </span>
                     <span className="text-xs text-gray-400 ml-2">
                       {new Date(msg.timestamp).toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit'
+                        hour: "2-digit",
+                        minute: "2-digit",
                       })}
                     </span>
                   </div>
@@ -267,7 +274,7 @@ const Task = () => {
             ))}
             <div ref={messagesEndRef} />
           </div>
-          
+
           {/* Message Input */}
           <div className="mt-6 flex gap-4">
             <textarea

@@ -3,8 +3,6 @@ const { ManagerSignUp,ManagerSignIn} = require('../controller/managersAuth')
 const {createTask,getmanagersTasks,getTask,deleteTask} = require('../controller/TaskController')
 
 const router = express.Router();
-const {protectRoute} = require('../middleware/authMiddleware')
-
 
 router.post('/signup', ManagerSignUp);
 router.post('/signin', ManagerSignIn);

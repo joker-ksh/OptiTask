@@ -4,41 +4,8 @@ import { useNavigate } from "react-router-dom";
 const Dash = () => {
   const navigate = useNavigate();
   // State for employees and tasks
-  const [employees, setEmployees] = useState([
-    {
-      id: 1,
-      name: "John Doe",
-      email: "john@example.com",
-      techstack: "React, Node.js, MongoDB",
-    },
-    {
-      id: 2,
-      name: "Jane Smith",
-      email: "jane@example.com",
-      techstack: "Angular, Express, PostgreSQL",
-    },
-    {
-      id: 3,
-      name: "Alex Johnson",
-      email: "alex@example.com",
-      techstack: "Vue.js, Python, MySQL",
-    },
-  ]);
-
-  const [tasks, setTasks] = useState([
-    {
-      id: 1,
-      name: "Implement User Authentication",
-      description: "Add JWT auth to the backend API",
-      deadline: "2025-03-15",
-    },
-    {
-      id: 2,
-      name: "Design Landing Page",
-      description: "Create responsive design for the new landing page",
-      deadline: "2025-03-20",
-    },
-  ]);
+  const [employees, setEmployees] = useState([]);
+  const [tasks, setTasks] = useState([]);
 
   // Form states
   const [newEmployee, setNewEmployee] = useState({
@@ -138,25 +105,21 @@ const Dash = () => {
 
   // Handle employee creation
   const handleCreateEmployee = async (e) => {
-    e.preventDefault();
-    console.log("New Employee:", newEmployee);
+  e.preventDefault();
+  try {
+    const response = await axios.post(
+      import.meta.env.VITE_SERVER_URL + "/developer/signup",
+      {
+        name: newEmployee.name,
+        email: newEmployee.email,
+        password: newEmployee.password,
+        techstack: newEmployee.techstack,
+        resume: newEmployee.resume,
+      }
+    );
+    console.log(response.data);
 
-    try {
-      const response = await axios.post(
-        import.meta.env.VITE_SERVER_URL + "/developer/signup",
-        {
-          name: newEmployee.name,
-          email: newEmployee.email,
-          password: newEmployee.password,
-          techstack: newEmployee.techstack,
-          resume: newEmployee.resume,
-        }
-      );
-      console.log(response.data);
-    } catch (err) {
-      console.error(err);
-    }
-    // Reset the form
+    // If signup was successful, reset form and refresh developers list
     setNewEmployee({
       name: "",
       email: "",
@@ -164,40 +127,38 @@ const Dash = () => {
       resume: null,
       techstack: "",
     });
-    // Toggle refresh to trigger re-fetch and re-render
-    setRefresh((prev) => !prev);
-  };
+    setRefresh(prev => !prev); // triggers useEffect to fetch employees again
+  } catch (err) {
+    console.error("Error creating employee:", err);
+  }
+};
+
 
   // Handle task creation
   const handleCreateTask = async (e) => {
-    e.preventDefault();
-    const id = tasks.length ? Math.max(...tasks.map((task) => task.id)) + 1 : 1;
+  e.preventDefault();
+  try {
+    console.log(managerUid, newTask.name, newTask.deadline, newTask.description);
 
-    try {
-      console.log(
-        managerUid,
-        newTask.name,
-        newTask.deadline,
-        newTask.description
-      );
-      const res = await axios.post(
-        import.meta.env.VITE_SERVER_URL + "/manager/createtask",
-        {
-          uid: managerUid,
-          task: newTask.name,
-          deadline: newTask.deadline,
-          description: newTask.description,
-        }
-      );
-      console.log(res);
-    } catch (e) {
-      console.log("error in making task" + e);
-    }
-    // Reset the task form
+    const res = await axios.post(
+      import.meta.env.VITE_SERVER_URL + "/manager/createtask",
+      {
+        uid: managerUid,
+        task: newTask.name,
+        deadline: newTask.deadline,
+        description: newTask.description,
+      }
+    );
+    console.log(res);
+
+    // After successful creation, reset form and refresh data
     setNewTask({ name: "", description: "", deadline: "" });
-    // Toggle refresh to trigger re-fetch and re-render
-    setRefresh((prev) => !prev);
-  };
+    setRefresh(prev => !prev); // triggers useEffect to fetch tasks again
+  } catch (e) {
+    console.log("Error creating task:", e);
+  }
+};
+
 
   // Handle file input change
   const handleFileChange = async (e) => {

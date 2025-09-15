@@ -9,12 +9,13 @@ const DeveloperSignUp = () => {
     password: "",
     resume: null,
   });
+
   const [resumePreview, setResumePreview] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState("");
   const [uploadStatusColor, setUploadStatusColor] = useState("text-blue-400");
-  const [loading, setLoading] = useState(false); // Loading state for form submission
-  const [successMessage, setSuccessMessage] = useState(""); // Success message state
+  const [submitting, setSubmitting] = useState(false); // Separate loading state for form submission
+  const [successMessage, setSuccessMessage] = useState("");
 
   const navigate = useNavigate();
 
@@ -24,13 +25,13 @@ const DeveloperSignUp = () => {
 
   const handleResumeUpload = async (e) => {
     const file = e.target.files[0];
-    if (file) {
-      setFormData({ ...formData, resume: file });
-      setResumePreview(URL.createObjectURL(file));
-      setUploadStatus("Uploading...");
-      setUploadStatusColor("text-blue-400");
-      await uploadToCloudinary(file);
-    }
+    if (!file) return;
+
+    setFormData({ ...formData, resume: file });
+    setResumePreview(URL.createObjectURL(file));
+    setUploadStatus("Uploading...");
+    setUploadStatusColor("text-blue-400");
+    await uploadToCloudinary(file);
   };
 
   const uploadToCloudinary = async (file) => {
@@ -44,10 +45,12 @@ const DeveloperSignUp = () => {
       setUploading(true);
       setUploadStatus("Uploading...");
       setUploadStatusColor("text-blue-400");
+
       const res = await axios.post(
         `https://api.cloudinary.com/v1_1/${cloudName}/upload`,
         data
       );
+
       setFormData((prev) => ({ ...prev, resume: res.data.secure_url }));
       setUploadStatus("Upload successful!");
       setUploadStatusColor("text-green-400");
@@ -66,21 +69,24 @@ const DeveloperSignUp = () => {
       return;
     }
 
-    setLoading(true); // Start loading
+    setSubmitting(true);
 
     try {
       const res = await axios.post(
         import.meta.env.VITE_SERVER_URL + "/developer/signup",
         formData
       );
-      const data = await res.data;
+      const data = res.data;
+
       localStorage.setItem("authTokenDeveloper", data.token);
       localStorage.setItem("uid", data.uid);
-      setSuccessMessage("Developer created");
+
+      setSuccessMessage("Developer created successfully!");
+      setTimeout(() => navigate("/dashboard"), 1500);
     } catch (error) {
       alert("Signup failed. Try again.");
     } finally {
-      setLoading(false); // Stop loading
+      setSubmitting(false);
     }
   };
 
@@ -99,7 +105,7 @@ const DeveloperSignUp = () => {
               value={formData.name}
               onChange={handleChange}
               required
-              disabled={loading}
+              disabled={submitting || uploading}
               className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-md text-white mb-4 disabled:opacity-50"
             />
             <input
@@ -109,7 +115,7 @@ const DeveloperSignUp = () => {
               value={formData.email}
               onChange={handleChange}
               required
-              disabled={loading}
+              disabled={submitting || uploading}
               className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-md text-white mb-4 disabled:opacity-50"
             />
             <input
@@ -119,38 +125,46 @@ const DeveloperSignUp = () => {
               value={formData.password}
               onChange={handleChange}
               required
-              disabled={loading}
+              disabled={submitting || uploading}
               className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-md text-white mb-4 disabled:opacity-50"
             />
-            <input
-              type="file"
-              accept="application/pdf"
-              onChange={handleResumeUpload}
-              required
-              disabled={loading || uploading}
-              className="w-full bg-gray-800 text-gray-300 px-4 py-2 border border-gray-700 rounded-md mb-4 disabled:opacity-50"
-            />
+            <div className="flex flex-col gap-2">
+              <input
+                type="file"
+                accept="application/pdf"
+                onChange={handleResumeUpload}
+                required
+                disabled={submitting || uploading}
+                className="w-full bg-gray-800 text-gray-300 px-4 py-2 border border-gray-700 rounded-md disabled:opacity-50"
+              />
+              {uploading && (
+                <div className="flex justify-center">
+                  <span className="animate-spin h-5 w-5 border-4 border-blue-400 border-t-transparent rounded-full"></span>
+                </div>
+              )}
+            </div>
             {uploadStatus && (
-              <p className={`text-center ${uploadStatusColor}`}>
-                {uploadStatus}
-              </p>
+              <p className={`text-center ${uploadStatusColor}`}>{uploadStatus}</p>
             )}
+
             <button
               type="submit"
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-md transition duration-200 flex justify-center items-center disabled:opacity-50"
-              disabled={loading || uploading}
+              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-md transition duration-200 flex justify-center items-center disabled:opacity-50 mt-4"
+              disabled={submitting || uploading}
             >
-              {loading ? (
+              {submitting ? (
                 <span className="animate-spin h-5 w-5 border-4 border-white border-t-transparent rounded-full"></span>
               ) : (
                 "Create Developer"
               )}
             </button>
           </form>
+
           {successMessage && (
             <p className="text-green-400 text-center mt-4">{successMessage}</p>
           )}
         </div>
+
         <div className="w-full md:w-1/2 flex items-center justify-center">
           {resumePreview ? (
             <iframe
