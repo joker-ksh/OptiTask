@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-
+import { useNavigate } from "react-router-dom";
 const Developerdash = () => {
   const [assignedTask, setAssignedTask] = useState(null);
   const [teamMembers, setTeamMembers] = useState([]);
@@ -11,6 +11,10 @@ const Developerdash = () => {
   const [newMessage, setNewMessage] = useState("");
   const [taskStatus, setTaskStatus] = useState("In Progress");
   const [isPageLoading, setIsPageLoading] = useState(true);
+
+
+  const navigate = useNavigate();
+
 
   // Fetch task data from the server and update state.
   useEffect(() => {
@@ -120,6 +124,11 @@ const Developerdash = () => {
     }),
   ];
 
+  const handleLogout = () => {
+    localStorage.removeItem("authTokenDeveloper");
+    localStorage.removeItem("uid");
+    navigate('/');
+  }
   const myUid = localStorage.getItem("uid");
   const mySubtask =
     teamMembers.find((member) => member.uid === myUid)?.subtask ||
@@ -151,7 +160,7 @@ const Developerdash = () => {
             </h1>
             <p className="text-gray-300 text-sm mt-1">Developer Dashboard</p>
           </div>
-          <button className="px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg">
+          <button onClick={handleLogout} className="px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg">
             Logout
           </button>
         </div>
