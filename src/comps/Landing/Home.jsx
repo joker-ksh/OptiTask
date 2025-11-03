@@ -24,6 +24,7 @@ function Home() {
         </p>
       </motion.div>
 
+      {/* Main Buttons Section */}
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -40,6 +41,7 @@ function Home() {
               </button>
             </Link>
           </motion.div>
+
           <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
             <Link to="/developer">
               <button 
@@ -50,6 +52,31 @@ function Home() {
             </Link>
           </motion.div>
         </div>
+      </motion.div>
+
+      {/* GitHub Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.3 }}
+        className="mt-10 text-center"
+      >
+        <p className="text-gray-400 mb-4 text-base">
+          View the complete source code of this project on GitHub
+        </p>
+        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }}>
+          <a 
+            href="https://github.com/joker-ksh/OptiTask"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <button 
+              className="bg-gray-700 hover:bg-gray-600 text-white font-semibold py-3 px-6 rounded-lg text-lg transition duration-200 shadow-md"
+            >
+              View on GitHub
+            </button>
+          </a>
+        </motion.div>
       </motion.div>
     </motion.div>
   );
