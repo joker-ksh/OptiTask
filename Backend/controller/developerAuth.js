@@ -19,17 +19,17 @@ const DeveloperSignUp = async (req, res) => {
     }
 
     try {
-        // ✅ Step 1: Fetch the Resume with timeout
+        // Step 1: Fetch the Resume with timeout
         const response = await axios.get(resume, { 
             responseType: 'arraybuffer',
             timeout: 10000 // 10 second timeout
         });
 
-        // ✅ Step 2: Parse the Resume using pdf-parse
+        // Step 2: Parse the Resume using pdf-parse
         const parsedData = await pdfparse(response.data);
         let extractedText = parsedData.text;
 
-        // ✅ Step 3: Optimize text for faster processing
+        // Step 3: Optimize text for faster processing
         // Remove extra whitespace and limit length
         extractedText = extractedText.replace(/\s+/g, ' ').trim();
         
@@ -40,7 +40,7 @@ const DeveloperSignUp = async (req, res) => {
         
         console.log("Extracted Resume Text Length:", extractedText.length);
 
-        // ✅ Step 4: Optimized Gemini prompt for speed and concise output
+        // Step 4: Optimized Gemini prompt for speed and concise output
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
         const model = genAI.getGenerativeModel({ 
             model: "gemini-2.5-flash",
@@ -51,23 +51,22 @@ const DeveloperSignUp = async (req, res) => {
         });
 
         const prompt = `Extract key technical skills from resume. Return ONLY comma-separated list format:
-Programming: skill1, skill2
-Frameworks: skill1, skill2  
-Databases: skill1, skill2
-Tools: skill1, skill2
-Experience: X years
-Context: ${techstack || 'General'}
-
-Resume: "${extractedText}"`;
+        Programming: skill1, skill2
+        Frameworks: skill1, skill2  
+        Databases: skill1, skill2
+        Tools: skill1, skill2
+        Experience: X years
+        Context: ${techstack || 'General'}
+        Resume: "${extractedText}"`;
 
         const geminiResponse = await model.generateContent({
             contents: [{ role: "user", parts: [{ text: prompt }] }]
         });
 
-        // ✅ Debug: Log the full response structure
+        // Debug: Log the full response structure
         console.log("Gemini Full Response:", JSON.stringify(geminiResponse, null, 2));
 
-        // ✅ Enhanced error handling for Gemini response
+        // Enhanced error handling for Gemini response
         let skillsExtracted = "No skills extracted";
 
         try {
@@ -115,12 +114,12 @@ Experience: Based on resume analysis`;
         }
         console.log("Extracted Skills:", skillsExtracted);
 
-        // ✅ Step 5: Create user in Firebase Auth ONLY IF Gemini was successful
+        // Step 5: Create user in Firebase Auth ONLY IF Gemini was successful
         const userCredentials = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredentials.user;
         console.log(user.uid + ' signed up');
 
-        // ✅ Step 6: Store Developer Data in Firestore
+        // Step 6: Store Developer Data in Firestore
         await setDoc(doc(db, 'developers', user.uid), {
             name,
             email,
@@ -131,10 +130,10 @@ Experience: Based on resume analysis`;
         });
         console.log('Developer added to Firestore');
 
-        // ✅ Step 7: Generate Token
+        // Step 7: Generate Token
         const token = await user.getIdToken();
         
-        // ✅ EXACT SAME RESPONSE FORMAT - Frontend won't be affected
+        // EXACT SAME RESPONSE FORMAT - Frontend won't be affected
         res.status(200).json({
             message: "Developer Signed Up Successfully",
             token,

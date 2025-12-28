@@ -3,7 +3,10 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 const Developers = () => {
-  const [formData, setFormData] = useState({ email: "", password: "" });
+  const [formData, setFormData] = useState({ 
+    email: "developer@gmail.com", 
+    password: "dev123" 
+  });
   const [errorMessage, setErrorMessage] = useState(""); // For error messages
   const [isLoading, setIsLoading] = useState(false); // Loading state
   const navigate = useNavigate();
@@ -48,7 +51,7 @@ const Developers = () => {
               <input
                 type="email"
                 name="email"
-                placeholder="Enter your email"
+                placeholder="developer@gmail.com"
                 value={formData.email}
                 onChange={handleChange}
                 className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -60,12 +63,19 @@ const Developers = () => {
               <input
                 type="password"
                 name="password"
-                placeholder="Enter your password"
+                placeholder="dev123"
                 value={formData.password}
                 onChange={handleChange}
                 className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 required
               />
+            </div>
+            
+            {/* Sample credentials info */}
+            <div className="mb-4 p-3 bg-gray-800/50 border border-gray-700 rounded-md">
+              <p className="text-gray-400 text-xs mb-1">Sample Credentials:</p>
+              <p className="text-gray-300 text-sm font-mono">Email : developer@gmail.com</p>
+              <p className="text-gray-300 text-sm font-mono">Password : dev123</p>
             </div>
             
             {/* Display error messages if any */}
